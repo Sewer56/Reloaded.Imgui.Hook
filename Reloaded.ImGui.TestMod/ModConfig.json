@@ -1,0 +1,16 @@
+{
+  "ModId": "Reloaded.ImGui.TestMod",
+  "ModName": "ImGui Hook Test",
+  "ModAuthor": "Sewer56",
+  "ModVersion": "1.0.0",
+  "ModDescription": "Aww Yeah!",
+  "ModDll": "Reloaded.ImGui.TestMod.dll",
+  "ModIcon": "Preview.png",
+  "ModR2RManagedDll32": "x86/Reloaded.ImGui.TestMod.dll",
+  "ModR2RManagedDll64": "x64/Reloaded.ImGui.TestMod.dll",
+  "ModNativeDll32": "",
+  "ModNativeDll64": "",
+  "ModDependencies": [ "reloaded.sharedlib.hooks" ],
+  "OptionalDependencies": null,
+  "SupportedAppId": [ ]
+}
