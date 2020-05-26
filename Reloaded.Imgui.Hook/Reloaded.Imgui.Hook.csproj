@@ -4,6 +4,11 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Authors>Sewer56</Authors>
+    <Description>Injects dear imgui into the current process.</Description>
+    <PackageLicenseExpression>lgpl-3.0</PackageLicenseExpression>
+    <Copyright>lgpl-3.0</Copyright>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
