@@ -6,9 +6,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>Sewer56</Authors>
     <Description>Injects dear imgui into the current process.</Description>
-    <PackageLicenseExpression>lgpl-3.0</PackageLicenseExpression>
-    <Copyright>lgpl-3.0</Copyright>
+    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
+    <Copyright>LGPL-3.0-only</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
