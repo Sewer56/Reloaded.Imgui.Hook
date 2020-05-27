@@ -9,11 +9,12 @@
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <Copyright>LGPL-3.0-only</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ImGui.NET.DirectX" Version="1.75.1" />
+    <PackageReference Include="DearImguiSharp" Version="1.75.0" />
     <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.4.0" />
     <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
     <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />

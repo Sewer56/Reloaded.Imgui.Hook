@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using ImGuiNET;
+using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Hooks;
 using SharpDX.Direct3D9;
+using IDirect3DDevice9 = DearImguiSharp.IDirect3DDevice9;
 
 namespace Reloaded.Imgui.Hook.Implementations
 {
@@ -23,8 +24,8 @@ namespace Reloaded.Imgui.Hook.Implementations
         {
             ImguiHook = hook;
             Hook = new DX9Hook(SDK.Hooks);
-            _endSceneHook = Hook.DeviceVTable.CreateFunctionHook<DX9Hook.EndScene>((int) Direct3DDevice9.EndScene, EndScene).Activate();
-            _resetHook = Hook.DeviceVTable.CreateFunctionHook<DX9Hook.Reset>((int) Direct3DDevice9.Reset, Reset).Activate();
+            _endSceneHook = Hook.DeviceVTable.CreateFunctionHook<DX9Hook.EndScene>((int) DirectX.Definitions.IDirect3DDevice9.EndScene, EndScene).Activate();
+            _resetHook = Hook.DeviceVTable.CreateFunctionHook<DX9Hook.Reset>((int)DirectX.Definitions.IDirect3DDevice9.Reset, Reset).Activate();
             _createDeviceHook = Hook.Direct3D9VTable.CreateFunctionHook<DX9Hook.CreateDevice>((int) IDirect3D9.CreateDevice, CreateDevice).Activate();
         }
 
@@ -41,7 +42,7 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private void ReleaseUnmanagedResources()
         {
-            ImGui.ImGui_ImplDX9_Shutdown();
+            ImGui.ImGuiImplDX9Shutdown();
         }
 
         private unsafe IntPtr CreateDevice(IntPtr direct3dpointer, uint adapter, DeviceType devicetype, IntPtr hfocuswindow, CreateFlags behaviorflags, ref PresentParameters ppresentationparameters, int** ppreturneddeviceinterface)
@@ -73,13 +74,13 @@ namespace Reloaded.Imgui.Hook.Implementations
                 if (_windowHandle == IntPtr.Zero)
                     return _endSceneHook.OriginalFunction(device);
 
-                ImGui.ImGui_ImplDX9_Init((void*)device);
+                ImGui.ImGuiImplDX9Init((void*)device);
                 _initialized = true;
             }
 
-            ImGui.ImGui_ImplDX9_NewFrame();
+            ImGui.ImGuiImplDX9NewFrame();
             ImguiHook.NewFrame();
-            ImGui.ImGui_ImplDX9_RenderDrawData(ImGui.GetDrawData());
+            ImGui.ImGuiImplDX9RenderDrawData(ImGui.GetDrawData());
 
             return _endSceneHook.OriginalFunction(device);
         }
@@ -87,9 +88,9 @@ namespace Reloaded.Imgui.Hook.Implementations
         private IntPtr Reset(IntPtr device, ref PresentParameters presentParameters)
         {
             Misc.Debug.WriteLine($"Reset Handle {(long)presentParameters.DeviceWindowHandle:X}");
-            ImGui.ImGui_ImplDX9_InvalidateDeviceObjects();
+            ImGui.ImGuiImplDX9InvalidateDeviceObjects();
             var result = _resetHook.OriginalFunction(device, ref presentParameters);
-            ImGui.ImGui_ImplDX9_CreateDeviceObjects();
+            ImGui.ImGuiImplDX9CreateDeviceObjects();
             return result;
         }
 

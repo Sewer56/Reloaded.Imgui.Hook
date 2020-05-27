@@ -1,5 +1,5 @@
 ﻿using System;
-using ImGuiNET;
+using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Hooks;
@@ -7,6 +7,7 @@ using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
 using Device = SharpDX.Direct3D11.Device;
+using ID3D11Device = DearImguiSharp.ID3D11Device;
 
 namespace Reloaded.Imgui.Hook.Implementations
 {
@@ -43,7 +44,7 @@ namespace Reloaded.Imgui.Hook.Implementations
         private void ReleaseUnmanagedResources()
         {
             _renderTargetView?.Dispose();
-            ImGui.ImGui_ImplDX11_Shutdown();
+            ImGui.ImGuiImplDX11Shutdown();
         }
 
         private IntPtr ResizeBuffers(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
@@ -58,7 +59,7 @@ namespace Reloaded.Imgui.Hook.Implementations
         {
             _renderTargetView?.Dispose();
             _renderTargetView = null;
-            ImGui.ImGui_ImplDX11_InvalidateDeviceObjects();
+            ImGui.ImGuiImplDX11InvalidateDeviceObjects();
         }
 
         private unsafe IntPtr PresentHook(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
@@ -69,7 +70,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             if (!_initialized)
             {
                 _windowHandle = swapChain.Description.OutputHandle;
-                ImGui.ImGui_ImplDX11_Init((void*) device.NativePointer, (void*) device.ImmediateContext.NativePointer);
+                ImGui.ImGuiImplDX11Init((void*) device.NativePointer, (void*) device.ImmediateContext.NativePointer);
 
                 var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
                 _renderTargetView = new RenderTargetView(device, backBuffer);
@@ -77,11 +78,11 @@ namespace Reloaded.Imgui.Hook.Implementations
                 backBuffer.Dispose();
             }
 
-            
-            ImGui.ImGui_ImplDX11_NewFrame();
+
+            ImGui.ImGuiImplDX11NewFrame();
             ImguiHook.NewFrame();
             device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
-            ImGui.ImGui_ImplDX11_RenderDrawData(ImGui.GetDrawData());
+            ImGui.ImGuiImplDX11RenderDrawData(ImGui.GetDrawData());
 
             swapChain.Dispose();
             device.Dispose();
@@ -90,7 +91,7 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private void PostResizeBuffers(IntPtr swapChainPtr)
         {
-            ImGui.ImGui_ImplDX11_CreateDeviceObjects();
+            ImGui.ImGuiImplDX11CreateDeviceObjects();
 
             _renderTargetView?.Dispose();
             var swapChain = new SwapChain(swapChainPtr);

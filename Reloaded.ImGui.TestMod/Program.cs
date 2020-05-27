@@ -4,6 +4,7 @@ using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Imgui.Hook;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
+using DearImguiSharp;
 
 namespace Reloaded.ImGui.TestMod
 {
@@ -52,7 +53,8 @@ namespace Reloaded.ImGui.TestMod
 
         private void RenderTestWindow()
         {
-            ImGuiNET.ImGui.ShowDemoWindow();
+            bool open = true;
+            DearImguiSharp.ImGui.ShowDemoWindow(ref open);
         }
 
         /* Mod loader actions. */

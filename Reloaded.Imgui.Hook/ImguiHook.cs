@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using ImGuiNET;
+using DearImguiSharp;
 using Reloaded.Imgui.Hook.DirectX;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
@@ -17,7 +17,7 @@ namespace Reloaded.Imgui.Hook
 
         private WndProcHook _wndProcHook;
         private IImguiHook _implementation;
-        private IntPtr _context;
+        private ImGuiContext _context;
         private IntPtr _windowHandle;
         private bool _initialized;
 
@@ -26,8 +26,8 @@ namespace Reloaded.Imgui.Hook
         {
             Render = render;
             _windowHandle = windowHandle;
-            _context = ImGui.CreateContext();
-            ImGui.StyleColorsDark();
+            _context = ImGui.CreateContext(null);
+            ImGui.StyleColorsDark(null);
         }
 
         ~ImguiHook()
@@ -50,7 +50,7 @@ namespace Reloaded.Imgui.Hook
 
         private void ReleaseUnmanagedResources()
         {
-            ImGui.ImGui_ImplWin32_Shutdown();
+            ImGui.ImGuiImplWin32Shutdown();
             ImGui.DestroyContext(_context);
         }
 
@@ -59,7 +59,7 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         private unsafe IntPtr WndProcHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
-            if (ImGui.ImGui_ImplWin32_WndProcHandler((void*)hWnd, msg, wParam, lParam) != IntPtr.Zero)
+            if (ImGui.ImplWin32_WndProcHandler((void*)hWnd, msg, wParam, lParam) != IntPtr.Zero)
                 return new IntPtr(1);
 
             return _wndProcHook.Hook.OriginalFunction(hWnd, msg, wParam, lParam);
@@ -78,12 +78,12 @@ namespace Reloaded.Imgui.Hook
                 if (_windowHandle == IntPtr.Zero)
                     return;
 
-                ImGui.ImGui_ImplWin32_Init(_windowHandle); 
+                ImGui.ImGuiImplWin32Init(_windowHandle); 
                 _wndProcHook = new WndProcHook(_windowHandle, WndProcHandler);
                 _initialized = true;
             }
 
-            ImGui.ImGui_ImplWin32_NewFrame();
+            ImGui.ImGuiImplWin32NewFrame();
             ImGui.NewFrame();
             Render();
             ImGui.Render();
