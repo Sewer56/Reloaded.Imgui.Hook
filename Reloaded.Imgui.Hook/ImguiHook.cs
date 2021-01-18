@@ -15,18 +15,37 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         public Action Render { get; private set; }
 
-        private WndProcHook _wndProcHook;
-        private IImguiHook _implementation;
-        private ImGuiContext _context;
-        private IntPtr _windowHandle;
-        private bool _initialized;
+        /// <summary>
+        /// Current hook for the render window's WndProc.
+        /// </summary>
+        public WndProcHook WndProcHook { get; private set; }
+
+        /// <summary>
+        /// Abstracts the current dear imgui implementation (DX9, DX11)
+        /// </summary>
+        public IImguiHook Implementation { get; private set; }
+        
+        /// <summary>
+        /// The current ImGui context.
+        /// </summary>
+        public ImGuiContext Context { get; private set; }
+
+        /// <summary>
+        /// Handle of the window being rendered.
+        /// </summary>
+        public IntPtr WindowHandle { get; private set; }
+
+        /// <summary>
+        /// True if the hook has been initialized, else false.
+        /// </summary>
+        public bool Initialized { get; private set; }
 
         // Construction/Destruction
         private ImguiHook(Action render, IntPtr windowHandle)
         {
             Render = render;
-            _windowHandle = windowHandle;
-            _context = ImGui.CreateContext(null);
+            WindowHandle = windowHandle;
+            Context = ImGui.CreateContext(null);
             ImGui.StyleColorsDark(null);
         }
 
@@ -45,13 +64,13 @@ namespace Reloaded.Imgui.Hook
         {
             ReleaseUnmanagedResources();
             if (disposing)
-                _implementation?.Dispose();
+                Implementation?.Dispose();
         }
 
         private void ReleaseUnmanagedResources()
         {
             ImGui.ImGuiImplWin32Shutdown();
-            ImGui.DestroyContext(_context);
+            ImGui.DestroyContext(Context);
         }
 
         /// <summary>
@@ -62,7 +81,7 @@ namespace Reloaded.Imgui.Hook
             if (ImGui.ImplWin32_WndProcHandler((void*)hWnd, msg, wParam, lParam) != IntPtr.Zero)
                 return new IntPtr(1);
 
-            return _wndProcHook.Hook.OriginalFunction(hWnd, msg, wParam, lParam);
+            return WndProcHook.Hook.OriginalFunction(hWnd, msg, wParam, lParam);
         }
 
         /// <summary>
@@ -70,17 +89,17 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         internal void NewFrame()
         {
-            if (!_initialized)
+            if (!Initialized)
             {
-                if (_windowHandle == IntPtr.Zero)
-                    _windowHandle = _implementation.GetWindowHandle();
+                if (WindowHandle == IntPtr.Zero)
+                    WindowHandle = Implementation.GetWindowHandle();
 
-                if (_windowHandle == IntPtr.Zero)
+                if (WindowHandle == IntPtr.Zero)
                     return;
 
-                ImGui.ImGuiImplWin32Init(_windowHandle); 
-                _wndProcHook = new WndProcHook(_windowHandle, WndProcHandler);
-                _initialized = true;
+                ImGui.ImGuiImplWin32Init(WindowHandle); 
+                WndProcHook = new WndProcHook(WindowHandle, WndProcHandler);
+                Initialized = true;
             }
 
             ImGui.ImGuiImplWin32NewFrame();
@@ -124,11 +143,11 @@ namespace Reloaded.Imgui.Hook
 
             if (Utility.IsD3D11(version))
             {
-                hook._implementation = new ImguiHookDX11(hook);
+                hook.Implementation = new ImguiHookDX11(hook);
             }
             else if (Utility.IsD3D9(version))
             {
-                hook._implementation = new ImguiHookDX9(hook);
+                hook.Implementation = new ImguiHookDX9(hook);
             }
             else
             {
@@ -141,14 +160,14 @@ namespace Reloaded.Imgui.Hook
 
         public void Enable()
         {
-            _wndProcHook?.Enable();
-            _implementation?.Enable();
+            WndProcHook?.Enable();
+            Implementation?.Enable();
         }
 
         public void Disable()
         {
-            _wndProcHook?.Disable();
-            _implementation?.Disable();
+            WndProcHook?.Disable();
+            Implementation?.Disable();
         }
     }
 }
