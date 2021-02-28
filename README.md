@@ -8,11 +8,9 @@
 
 
 # Introduction
-Reloaded.Imgui.Hook is a simple personal use utility library that can be used to inject Dear Imgui into the current process. 
+Reloaded.Imgui.Hook is a simple personal use utility library that can be used to inject [Dear ImGui](https://github.com/ocornut/imgui) into the current process. 
 
-It is based off of my [minimal changes fork](https://github.com/Sewer56/ImGui.NET) of the great [ImGui.NET](https://github.com/mellinoe/ImGui.NET) library built ontop of [cimgui](https://github.com/cimgui/cimgui).
-
-
+It is based off of [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp), my personal use bindings library for Dear ImGui built ontop of [cimgui](https://github.com/cimgui/cimgui).
 
 <div align="center">
 	<img src="./Images/Nepkopara.png" width="750" align="center" />

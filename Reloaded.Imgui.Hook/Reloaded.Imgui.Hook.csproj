@@ -5,16 +5,16 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>Sewer56</Authors>
-    <Description>Injects dear imgui into the current process.</Description>
+    <Description>Injects Dear ImGui into the current process.</Description>
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <Copyright>LGPL-3.0-only</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.5</Version>
+    <Version>1.1.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DearImguiSharp" Version="1.75.2" />
+    <PackageReference Include="DearImguiSharp" Version="1.81.1" />
     <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.4.0" />
     <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
     <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
