@@ -81,9 +81,7 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         private unsafe IntPtr WndProcHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
-            if (ImGui.ImplWin32_WndProcHandler((void*)hWnd, msg, wParam, lParam) != IntPtr.Zero)
-                return new IntPtr(1);
-
+            ImGui.ImplWin32_WndProcHandler((void*) hWnd, msg, wParam, lParam);
             return WndProcHook.Hook.OriginalFunction(hWnd, msg, wParam, lParam);
         }
 
