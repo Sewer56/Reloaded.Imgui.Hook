@@ -67,17 +67,14 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
         /// <param name="swapChainPtr">The pointer to the actual swapchain, `this` object.</param>
         /// <param name="syncInterval">An integer that specifies how to synchronize presentation of a frame with the vertical blank.</param>
         /// <param name="flags">An integer value that contains swap-chain presentation options. These options are defined by the DXGI_PRESENT constants.</param>
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public delegate IntPtr Present(IntPtr swapChainPtr, int syncInterval, PresentFlags flags);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public delegate IntPtr ResizeTarget(IntPtr swapChainPtr, ref ModeDescription newTargetParameters);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public delegate IntPtr ResizeBuffers(IntPtr swapChainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapChainFlags);

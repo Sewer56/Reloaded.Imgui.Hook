@@ -39,7 +39,6 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
         /// Defines the IDirect3DDevice9.EndScene function, allowing us to render ontop of the DirectX instance.
         /// </summary>
         /// <param name="device">Pointer to the individual Direct3D9 device.</param>
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public delegate IntPtr EndScene(IntPtr device);
@@ -50,12 +49,10 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
         /// </summary>
         /// <param name="device">Pointer to the individual Direct3D9 device.</param>
         /// <param name="presentParameters">Pointer to a D3DPRESENT_PARAMETERS structure, describing the new presentation parameters.</param>
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)] 
         public delegate IntPtr Reset(IntPtr device, ref PresentParameters presentParameters);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public unsafe delegate IntPtr CreateDevice(IntPtr direct3DPointer, uint adapter, DeviceType deviceType, IntPtr hFocusWindow, CreateFlags behaviorFlags, ref PresentParameters pPresentationParameters, int** ppReturnedDeviceInterface);
