@@ -65,9 +65,8 @@ namespace Reloaded.Imgui.Hook.Implementations
                 // This can fail though if window handle is only passed in presentation parameters.
                 if (_windowHandle == IntPtr.Zero)
                 {
-                    var dev = new Device(device);
+                    using var dev = new Device(device);
                     _windowHandle = dev.CreationParameters.HFocusWindow;
-                    dev.Dispose();
                 }
 
                 Misc.Debug.WriteLine($"EndScene Window Handle {(long)_windowHandle:X}");
@@ -80,7 +79,8 @@ namespace Reloaded.Imgui.Hook.Implementations
 
             ImGui.ImGuiImplDX9NewFrame();
             ImguiHook.NewFrame();
-            ImGui.ImGuiImplDX9RenderDrawData(ImGui.GetDrawData());
+            using var drawData = ImGui.GetDrawData();
+            ImGui.ImGuiImplDX9RenderDrawData(drawData);
 
             return _endSceneHook.OriginalFunction(device);
         }

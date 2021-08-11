@@ -64,28 +64,25 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private unsafe IntPtr PresentHook(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
-            var swapChain = new SwapChain(swapChainPtr);
-            var device    = swapChain.GetDevice<Device>();
+            using var swapChain = new SwapChain(swapChainPtr);
+            using var device    = swapChain.GetDevice<Device>();
             
             if (!_initialized)
             {
                 _windowHandle = swapChain.Description.OutputHandle;
                 ImGui.ImGuiImplDX11Init((void*) device.NativePointer, (void*) device.ImmediateContext.NativePointer);
 
-                var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
+                using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
                 _renderTargetView = new RenderTargetView(device, backBuffer);
                 _initialized = true;
-                backBuffer.Dispose();
             }
-
 
             ImGui.ImGuiImplDX11NewFrame();
             ImguiHook.NewFrame();
             device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
-            ImGui.ImGuiImplDX11RenderDrawData(ImGui.GetDrawData());
-
-            swapChain.Dispose();
-            device.Dispose();
+            using var drawData = ImGui.GetDrawData();
+            ImGui.ImGuiImplDX11RenderDrawData(drawData);
+            
             return _presentHook.OriginalFunction(swapChainPtr, syncInterval, flags);
         }
 
@@ -94,14 +91,10 @@ namespace Reloaded.Imgui.Hook.Implementations
             ImGui.ImGuiImplDX11CreateDeviceObjects();
 
             _renderTargetView?.Dispose();
-            var swapChain = new SwapChain(swapChainPtr);
-            var device = swapChain.GetDevice<Device>();
-            var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
+            using var swapChain = new SwapChain(swapChainPtr);
+            using var device = swapChain.GetDevice<Device>();
+            using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
             _renderTargetView = new RenderTargetView(device, backBuffer);
-
-            swapChain.Dispose();
-            device.Dispose();
-            backBuffer.Dispose();
         }
 
         public void Disable()

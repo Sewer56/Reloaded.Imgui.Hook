@@ -64,7 +64,10 @@ namespace Reloaded.Imgui.Hook
         {
             ReleaseUnmanagedResources();
             if (disposing)
+            {
                 Implementation?.Dispose();
+                Context?.Dispose();
+            }
         }
 
         private void ReleaseUnmanagedResources()
@@ -139,7 +142,7 @@ namespace Reloaded.Imgui.Hook
         /// <param name="version">DirectX version to handle.</param>
         public static ImguiHook Create(Action render, IntPtr windowHandle, Direct3DVersion version)
         {
-            var hook       = new ImguiHook(render, windowHandle);
+            var hook = new ImguiHook(render, windowHandle);
 
             if (Utility.IsD3D11(version))
             {
