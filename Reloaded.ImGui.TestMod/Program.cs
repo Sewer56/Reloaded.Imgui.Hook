@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Imgui.Hook;
@@ -48,7 +48,7 @@ namespace Reloaded.ImGui.TestMod
 
             /* Your mod code starts here. */
             SDK.Init(_hooks);
-            _imguiHook = await ImguiHook.Create(RenderTestWindow);
+            _imguiHook = await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
         }
 
         private void RenderTestWindow()

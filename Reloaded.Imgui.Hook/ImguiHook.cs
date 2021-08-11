@@ -118,7 +118,7 @@ namespace Reloaded.Imgui.Hook
         /// <param name="render">Renders your imgui UI</param>
         public static async Task<ImguiHook> Create(Action render)
         {
-            var dxVersion = await Utility.GetDXVersion();
+            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
             return Create(render, IntPtr.Zero, dxVersion);
         }
 
@@ -130,7 +130,7 @@ namespace Reloaded.Imgui.Hook
         /// <param name="windowHandle">Handle of the window to draw on.</param>
         public static async Task<ImguiHook> Create(Action render, IntPtr windowHandle)
         {
-            var dxVersion = await Utility.GetDXVersion();
+            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
             return Create(render, windowHandle, dxVersion);
         }
 
