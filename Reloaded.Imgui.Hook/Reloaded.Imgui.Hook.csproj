@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="DearImguiSharp" Version="1.83.0" />
-    <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.4.0" />
+    <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.9.1" />
     <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
     <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
   </ItemGroup>
