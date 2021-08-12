@@ -64,8 +64,8 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private unsafe IntPtr PresentHook(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
-            using var swapChain = new SwapChain(swapChainPtr);
-            using var device    = swapChain.GetDevice<Device>();
+            var swapChain = new SwapChain(swapChainPtr);
+            using var device = swapChain.GetDevice<Device>();
             
             if (!_initialized)
             {
@@ -91,7 +91,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             ImGui.ImGuiImplDX11CreateDeviceObjects();
 
             _renderTargetView?.Dispose();
-            using var swapChain = new SwapChain(swapChainPtr);
+            var swapChain = new SwapChain(swapChainPtr);
             using var device = swapChain.GetDevice<Device>();
             using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
             _renderTargetView = new RenderTargetView(device, backBuffer);

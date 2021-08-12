@@ -65,7 +65,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                 // This can fail though if window handle is only passed in presentation parameters.
                 if (_windowHandle == IntPtr.Zero)
                 {
-                    using var dev = new Device(device);
+                    var dev = new Device(device);
                     _windowHandle = dev.CreationParameters.HFocusWindow;
                 }
 
