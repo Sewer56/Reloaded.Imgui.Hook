@@ -35,7 +35,7 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
             var renderForm = new Form();
 
             // Get Table
-            Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, GetSwapChainDescription(renderForm.Handle), out dx11Device, out dxgiSwapChain);
+            Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.None, GetSwapChainDescription(renderForm.Handle), out dx11Device, out dxgiSwapChain);
             VTable = _hooks.VirtualFunctionTableFromObject(dx11Device.NativePointer, Enum.GetNames(typeof(ID3D11Device)).Length);
             DXGIVTable = _hooks.VirtualFunctionTableFromObject(dxgiSwapChain.NativePointer, Enum.GetNames(typeof(IDXGISwapChain)).Length);
 
@@ -50,16 +50,12 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
             return new SwapChainDescription()
             {
                 BufferCount = 1,
-                Flags = SwapChainFlags.None,
                 IsWindowed = true,
-                ModeDescription = new ModeDescription(100, 100, new Rational(60, 1), Format.R8G8B8A8_UNorm),
+                ModeDescription = new ModeDescription(640, 480, new Rational(60, 1), Format.R8G8B8A8_UNorm),
                 OutputHandle = formHandle,
                 SampleDescription = new SampleDescription(1, 0),
-                SwapEffect = SwapEffect.Discard,
-                Usage = Usage.RenderTargetOutput
             };
         }
-
 
         /// <summary>
         /// Defines the IDXGISwapChain.Present function, used to show the rendered image right to the user.
