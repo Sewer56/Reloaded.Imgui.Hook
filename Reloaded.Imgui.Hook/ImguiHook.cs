@@ -5,6 +5,7 @@ using DearImguiSharp;
 using Reloaded.Imgui.Hook.DirectX;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
+using Reloaded.Imgui.Hook.Misc;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -40,12 +41,19 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         public bool Initialized { get; private set; }
 
+        /// <summary>
+        /// Message filter for the PeekMessage WinAPI function.
+        /// Can be used to filter inputs away from target application.
+        /// </summary>
+        public PeekMessageHook InputBlocker { get; private set; } 
+
         // Construction/Destruction
         private ImguiHook(Action render, IntPtr windowHandle)
         {
             Render = render;
             WindowHandle = windowHandle;
             Context = ImGui.CreateContext(null);
+            InputBlocker = new PeekMessageHook();
             ImGui.StyleColorsDark(null);
         }
 

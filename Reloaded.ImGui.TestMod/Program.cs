@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Imgui.Hook;
 using Reloaded.Mod.Interfaces;
@@ -42,6 +43,7 @@ namespace Reloaded.ImGui.TestMod
         /// </summary>
         public async void Start(IModLoaderV1 loader)
         {
+            Debugger.Launch();
             _modLoader = (IModLoader)loader;
             _logger = (ILogger)_modLoader.GetLogger();
             _modLoader.GetController<IReloadedHooks>().TryGetTarget(out _hooks);
@@ -49,6 +51,9 @@ namespace Reloaded.ImGui.TestMod
             /* Your mod code starts here. */
             SDK.Init(_hooks);
             _imguiHook = await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
+            _imguiHook.InputBlocker.Initialize();
+            _imguiHook.InputBlocker.BlockMouseInput = true;
+            _imguiHook.InputBlocker.BlockKeyboardInput = true;
         }
 
         private void RenderTestWindow()

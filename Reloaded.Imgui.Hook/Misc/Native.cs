@@ -8,6 +8,12 @@ namespace Reloaded.Imgui.Hook.Misc
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
+        [DllImport("kernel32", CharSet = CharSet.Ansi)]
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [DllImport("user32.dll")]
+        public static extern unsafe bool TranslateMessage([In] NativeMessage* lpMsg);
+
         public static IntPtr GetWindowLong(IntPtr hWnd, GWL nIndex)
         {
             if (IsWindowUnicode(hWnd))
@@ -37,6 +43,17 @@ namespace Reloaded.Imgui.Hook.Misc
             GWL_EXSTYLE = (-20),
             GWL_USERDATA = (-21),
             GWL_ID = (-12)
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativeMessage
+        {
+            public IntPtr handle;
+            public WindowMessage message;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public System.Drawing.Point pt;
         }
 
         [DllImport("user32.dll")]
