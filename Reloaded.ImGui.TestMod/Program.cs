@@ -38,12 +38,12 @@ namespace Reloaded.ImGui.TestMod
         /// </summary>
         public async void Start(IModLoaderV1 loader)
         {
-            _modLoader = (IModLoader)loader;
-            _logger = (ILogger)_modLoader.GetLogger();
+            _modLoader = (IModLoader) loader;
+            _logger = (ILogger) _modLoader.GetLogger();
             _modLoader.GetController<IReloadedHooks>().TryGetTarget(out _hooks);
 
             /* Your mod code starts here. */
-            SDK.Init(_hooks);
+            SDK.Init(_hooks, s => { _logger.WriteLine(s); });
             await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
         }
 
@@ -56,11 +56,7 @@ namespace Reloaded.ImGui.TestMod
         /* Mod loader actions. */
         public void Suspend() => ImguiHook.Disable();
         public void Resume() => ImguiHook.Enable();
-        public void Unload()
-        {
-            Suspend();
-            ImguiHook.Destroy();
-        }
+        public void Unload() => ImguiHook.Destroy();
 
         /*  If CanSuspend == false, suspend and resume button are disabled in Launcher and Suspend()/Resume() will never be called.
             If CanUnload == false, unload button is disabled in Launcher and Unload() will never be called.
