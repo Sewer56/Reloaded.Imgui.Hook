@@ -45,7 +45,7 @@ namespace Reloaded.Imgui.Hook.DirectX
         /// </summary>#
         public static bool IsD3D11(Direct3DVersion version)
         {
-            return version == Direct3DVersion.Direct3D11 || version == Direct3DVersion.Direct3D10_1
+            return version == Direct3DVersion.Direct3D11 || version == Direct3DVersion.Direct3D11_1
                                                          || version == Direct3DVersion.Direct3D11_2
                                                          || version == Direct3DVersion.Direct3D11_3
                                                          || version == Direct3DVersion.Direct3D11_4;
