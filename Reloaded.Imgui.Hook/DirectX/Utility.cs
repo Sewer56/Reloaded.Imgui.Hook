@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using static Reloaded.Imgui.Hook.Misc.Native;
+using Debug = Reloaded.Imgui.Hook.Misc.Debug;
 
 namespace Reloaded.Imgui.Hook.DirectX
 {
@@ -20,16 +21,17 @@ namespace Reloaded.Imgui.Hook.DirectX
             stopWatch.Start();
 
             // Loop until DirectX module found.
-            while (true)
+            var versions = Direct3DVersion.Null;
+            while (versions == Direct3DVersion.Null)
             {
-                if ((long)GetModuleHandle("d3d9.dll") != 0) { return Direct3DVersion.Direct3D9; }
-                if ((long)GetModuleHandle("d3d10.dll") != 0) { return Direct3DVersion.Direct3D10; }
-                if ((long)GetModuleHandle("d3d10_1.dll") != 0) { return Direct3DVersion.Direct3D10_1; }
-                if ((long)GetModuleHandle("d3d11.dll") != 0) { return Direct3DVersion.Direct3D11; }
-                if ((long)GetModuleHandle("d3d11_1.dll") != 0) { return Direct3DVersion.Direct3D11_1; }
-                if ((long)GetModuleHandle("d3d11_2.dll") != 0) { return Direct3DVersion.Direct3D11_2; }
-                if ((long)GetModuleHandle("d3d11_3.dll") != 0) { return Direct3DVersion.Direct3D11_3; }
-                if ((long)GetModuleHandle("d3d11_4.dll") != 0) { return Direct3DVersion.Direct3D11_4; }
+                if ((long)GetModuleHandle("d3d9.dll") != 0) { versions |= Direct3DVersion.Direct3D9; }
+                if ((long)GetModuleHandle("d3d10.dll") != 0) { versions |= Direct3DVersion.Direct3D10; }
+                if ((long)GetModuleHandle("d3d10_1.dll") != 0) { versions |= Direct3DVersion.Direct3D10_1; }
+                if ((long)GetModuleHandle("d3d11.dll") != 0) { versions |= Direct3DVersion.Direct3D11; }
+                if ((long)GetModuleHandle("d3d11_1.dll") != 0) { versions |= Direct3DVersion.Direct3D11_1; }
+                if ((long)GetModuleHandle("d3d11_2.dll") != 0) { versions |= Direct3DVersion.Direct3D11_2; }
+                if ((long)GetModuleHandle("d3d11_3.dll") != 0) { versions |= Direct3DVersion.Direct3D11_3; }
+                if ((long)GetModuleHandle("d3d11_4.dll") != 0) { versions |= Direct3DVersion.Direct3D11_4; }
 
                 // Check timeout.
                 if (stopWatch.ElapsedMilliseconds > timeout)
@@ -38,6 +40,9 @@ namespace Reloaded.Imgui.Hook.DirectX
                 // Check every X milliseconds.
                 await Task.Delay(retryTime);
             }
+
+            Debug.WriteLine($"DirectX Versions Detected: {versions}");
+            return versions;
         }
 
         /// <summary>
@@ -45,18 +50,16 @@ namespace Reloaded.Imgui.Hook.DirectX
         /// </summary>#
         public static bool IsD3D11(Direct3DVersion version)
         {
-            return version == Direct3DVersion.Direct3D11 || version == Direct3DVersion.Direct3D11_1
-                                                         || version == Direct3DVersion.Direct3D11_2
-                                                         || version == Direct3DVersion.Direct3D11_3
-                                                         || version == Direct3DVersion.Direct3D11_4;
+            var d3d11flags = Direct3DVersion.Direct3D11 | Direct3DVersion.Direct3D11_1 |
+                             Direct3DVersion.Direct3D11_2 | Direct3DVersion.Direct3D11_3 |
+                             Direct3DVersion.Direct3D11_4;
+
+            return (version & d3d11flags) > 0;
         }
 
         /// <summary>
         /// True if the returned version is D3D11.
         /// </summary>#
-        public static bool IsD3D9(Direct3DVersion version)
-        {
-            return version == Direct3DVersion.Direct3D9;
-        }
+        public static bool IsD3D9(Direct3DVersion version) => version.HasFlag(Direct3DVersion.Direct3D9);
     }
 }

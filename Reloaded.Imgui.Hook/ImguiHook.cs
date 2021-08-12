@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -23,9 +24,9 @@ namespace Reloaded.Imgui.Hook
         public static WndProcHook WndProcHook { get; private set; }
 
         /// <summary>
-        /// Abstracts the current dear imgui implementation (DX9, DX11)
+        /// Abstracts the current dear imgui implementations (DX9, DX11)
         /// </summary>
-        public static IImguiHook Implementation { get; private set; }
+        public static List<IImguiHook> Implementations { get; private set; }
         
         /// <summary>
         /// The current ImGui context.
@@ -86,14 +87,17 @@ namespace Reloaded.Imgui.Hook
             Context = ImGui.CreateContext(null);
             ImGui.StyleColorsDark(null);
 
+            Implementations = new List<IImguiHook>();
+
             if (Utility.IsD3D11(version))
-                Implementation = ImguiHookDX11.Instance;
-            else if (Utility.IsD3D9(version))
-                Implementation = ImguiHookDX9.Instance;
-            else
+                Implementations.Add(ImguiHookDX11.Instance);
+            if (Utility.IsD3D9(version))
+                Implementations.Add(ImguiHookDX9.Instance);
+
+            if (Implementations.Count <= 0)
             {
                 Disable();
-                throw new Exception("Unsupported or not found DirectX version.");
+                throw new Exception("Unsupported or not found any compatible DirectX Implementation(s).");
             }
         }
 
@@ -107,12 +111,19 @@ namespace Reloaded.Imgui.Hook
             if (Initialized)
                 ImGui.ImGuiImplWin32Shutdown();
 
-            Implementation?.Dispose();
+            if (Implementations != null)
+            {
+                foreach (var implementation in Implementations)
+                {
+                    implementation?.Dispose();
+                }
+            }
+            
             ImGui.DestroyContext(Context);
             Context?.Dispose();
 
             Render = null;
-            Implementation = null;
+            Implementations = null;
             Context = null;
             WndProcHook = null;
             WindowHandle = IntPtr.Zero;
@@ -126,8 +137,12 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         public static void Enable()
         {
-            WndProcHook?.Enable();
-            Implementation?.Enable();
+            WndProcHook?.Enable(); 
+            if (Implementations == null)
+                return;
+
+            foreach (var implementation in Implementations)
+                implementation?.Enable();
         }
 
         /// <summary>
@@ -136,7 +151,11 @@ namespace Reloaded.Imgui.Hook
         public static void Disable()
         {
             WndProcHook?.Disable();
-            Implementation?.Disable();
+            if (Implementations == null) 
+                return;
+
+            foreach (var implementation in Implementations)
+                implementation?.Disable();
         }
 
         /// <summary>
@@ -152,12 +171,12 @@ namespace Reloaded.Imgui.Hook
         /// <summary>
         /// Called from renderer implementation, renders a new frame.
         /// </summary>
-        internal static unsafe void NewFrame()
+        internal static unsafe void NewFrame(IntPtr windowHandle)
         {
             if (!Initialized)
             {
                 if (WindowHandle == IntPtr.Zero)
-                    WindowHandle = Implementation.GetWindowHandle();
+                    WindowHandle = windowHandle;
 
                 if (WindowHandle == IntPtr.Zero)
                     return;

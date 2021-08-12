@@ -85,7 +85,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
 
             ImGui.ImGuiImplDX9NewFrame();
-            ImguiHook.NewFrame();
+            ImguiHook.NewFrame(GetWindowHandle());
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX9RenderDrawData(drawData);
 

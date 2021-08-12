@@ -92,7 +92,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
 
             ImGui.ImGuiImplDX11NewFrame();
-            ImguiHook.NewFrame();
+            ImguiHook.NewFrame(GetWindowHandle());
             device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX11RenderDrawData(drawData);
