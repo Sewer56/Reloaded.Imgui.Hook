@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
@@ -11,23 +13,23 @@ using ID3D11Device = DearImguiSharp.ID3D11Device;
 
 namespace Reloaded.Imgui.Hook.Implementations
 {
-    public class ImguiHookDX11 : IImguiHook
+    public unsafe class ImguiHookDX11 : IImguiHook
     {
-        public ImguiHook ImguiHook { get; private set; }
-        public DX11Hook Hook { get; private set; }
+        public static ImguiHookDX11 Instance { get; private set; } = new ImguiHookDX11();
 
         private IHook<DX11Hook.Present> _presentHook;
         private IHook<DX11Hook.ResizeBuffers> _resizeBuffersHook;
         private bool _initialized = false;
         private IntPtr _windowHandle;
         private RenderTargetView _renderTargetView;
-
-        public ImguiHookDX11(ImguiHook hook)
+        
+        public ImguiHookDX11()
         {
-            ImguiHook = hook;
-            Hook = new DX11Hook(SDK.Hooks);
-            _presentHook = Hook.DXGIVTable.CreateFunctionHook<DX11Hook.Present>((int)IDXGISwapChain.Present, PresentHook).Activate();
-            _resizeBuffersHook = Hook.DXGIVTable.CreateFunctionHook<DX11Hook.ResizeBuffers>((int)IDXGISwapChain.ResizeBuffers, ResizeBuffers).Activate();
+            var presentPtr = (long) DX11Hook.DXGIVTable[(int) IDXGISwapChain.Present].FunctionPointer;
+            var resizeBuffersPtr = (long) DX11Hook.DXGIVTable[(int) IDXGISwapChain.ResizeBuffers].FunctionPointer;
+
+            _presentHook = SDK.Hooks.CreateHook<DX11Hook.Present>(typeof(ImguiHookDX11), nameof(PresentImplStatic), presentPtr).Activate();
+            _resizeBuffersHook = SDK.Hooks.CreateHook<DX11Hook.ResizeBuffers>(typeof(ImguiHookDX11), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
         }
 
         ~ImguiHookDX11()
@@ -44,13 +46,14 @@ namespace Reloaded.Imgui.Hook.Implementations
         private void ReleaseUnmanagedResources()
         {
             _renderTargetView?.Dispose();
-            ImGui.ImGuiImplDX11Shutdown();
+            if (_initialized)
+                ImGui.ImGuiImplDX11Shutdown();
         }
 
-        private IntPtr ResizeBuffers(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
+        private IntPtr ResizeBuffersImpl(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
         {
             PreResizeBuffers();
-            var result = _resizeBuffersHook.OriginalFunction(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+            var result = _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
             PostResizeBuffers(swapchainPtr);
             return result;
         }
@@ -62,7 +65,18 @@ namespace Reloaded.Imgui.Hook.Implementations
             ImGui.ImGuiImplDX11InvalidateDeviceObjects();
         }
 
-        private unsafe IntPtr PresentHook(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
+        private void PostResizeBuffers(IntPtr swapChainPtr)
+        {
+            ImGui.ImGuiImplDX11CreateDeviceObjects();
+
+            _renderTargetView?.Dispose();
+            var swapChain = new SwapChain(swapChainPtr);
+            using var device = swapChain.GetDevice<Device>();
+            using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
+            _renderTargetView = new RenderTargetView(device, backBuffer);
+        }
+
+        private unsafe IntPtr PresentImpl(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
             var swapChain = new SwapChain(swapChainPtr);
             using var device = swapChain.GetDevice<Device>();
@@ -83,18 +97,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX11RenderDrawData(drawData);
             
-            return _presentHook.OriginalFunction(swapChainPtr, syncInterval, flags);
-        }
-
-        private void PostResizeBuffers(IntPtr swapChainPtr)
-        {
-            ImGui.ImGuiImplDX11CreateDeviceObjects();
-
-            _renderTargetView?.Dispose();
-            var swapChain = new SwapChain(swapChainPtr);
-            using var device = swapChain.GetDevice<Device>();
-            using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
-            _renderTargetView = new RenderTargetView(device, backBuffer);
+            return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
         }
 
         public void Disable()
@@ -110,5 +113,13 @@ namespace Reloaded.Imgui.Hook.Implementations
         }
 
         public IntPtr GetWindowHandle() => _windowHandle;
+
+        #region Hook Functions
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+        private static IntPtr ResizeBuffersImplStatic(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags) => Instance.ResizeBuffersImpl(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+        
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+        private static IntPtr PresentImplStatic(IntPtr swapChainPtr, int syncInterval, PresentFlags flags) => Instance.PresentImpl(swapChainPtr, syncInterval, flags);
+        #endregion
     }
 }

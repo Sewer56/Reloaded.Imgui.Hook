@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DearImguiSharp;
 using Reloaded.Imgui.Hook.DirectX;
@@ -8,87 +10,149 @@ using Reloaded.Imgui.Hook.Implementations;
 
 namespace Reloaded.Imgui.Hook
 {
-    public class ImguiHook : IDisposable
+    public static class ImguiHook
     {
         /// <summary>
         /// User supplied function to render the imgui UI.
         /// </summary>
-        public Action Render { get; private set; }
+        public static Action Render { get; private set; }
 
         /// <summary>
         /// Current hook for the render window's WndProc.
         /// </summary>
-        public WndProcHook WndProcHook { get; private set; }
+        public static WndProcHook WndProcHook { get; private set; }
 
         /// <summary>
         /// Abstracts the current dear imgui implementation (DX9, DX11)
         /// </summary>
-        public IImguiHook Implementation { get; private set; }
+        public static IImguiHook Implementation { get; private set; }
         
         /// <summary>
         /// The current ImGui context.
         /// </summary>
-        public ImGuiContext Context { get; private set; }
+        public static ImGuiContext Context { get; private set; }
 
         /// <summary>
         /// Handle of the window being rendered.
         /// </summary>
-        public IntPtr WindowHandle { get; private set; }
+        public static IntPtr WindowHandle { get; private set; }
 
         /// <summary>
         /// True if the hook has been initialized, else false.
         /// </summary>
-        public bool Initialized { get; private set; }
+        public static bool Initialized { get; private set; }
+        private static bool _created = false;
 
-        // Construction/Destruction
-        private ImguiHook(Action render, IntPtr windowHandle)
+        /// <summary>
+        /// Creates a new hook given the Reloaded.Hooks library.
+        /// The library will hook to the main window.
+        /// </summary>
+        /// <param name="render">Renders your imgui UI</param>
+        public static async Task Create(Action render)
         {
+            if (_created)
+                return;
+
+            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
+            Create(render, IntPtr.Zero, dxVersion);
+        }
+
+        /// <summary>
+        /// Creates a new hook given the Reloaded.Hooks library.
+        /// The library will hook to the main window.
+        /// </summary>
+        /// <param name="render">Renders your imgui UI</param>
+        /// <param name="windowHandle">Handle of the window to draw on.</param>
+        public static async Task Create(Action render, IntPtr windowHandle)
+        {
+            if (_created)
+                return;
+
+            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
+            Create(render, windowHandle, dxVersion);
+        }
+
+        /// <summary>
+        /// Creates a new ImGui hook.
+        /// </summary>
+        /// <param name="render">Renders your imgui UI</param>
+        /// <param name="windowHandle">Handle to the window to render on. Pass IntPtr.Zero to select main window.</param>
+        /// <param name="version">DirectX version to handle.</param>
+        public static void Create(Action render, IntPtr windowHandle, Direct3DVersion version)
+        {
+            _created = true;
             Render = render;
             WindowHandle = windowHandle;
             Context = ImGui.CreateContext(null);
             ImGui.StyleColorsDark(null);
-        }
 
-        ~ImguiHook()
-        {
-            Dispose(false);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            ReleaseUnmanagedResources();
-            if (disposing)
+            if (Utility.IsD3D11(version))
+                Implementation = ImguiHookDX11.Instance;
+            else if (Utility.IsD3D9(version))
+                Implementation = ImguiHookDX9.Instance;
+            else
             {
-                Implementation?.Dispose();
-                Context?.Dispose();
+                Disable();
+                throw new Exception("Unsupported or not found DirectX version.");
             }
         }
 
-        private void ReleaseUnmanagedResources()
+        /// <summary>
+        /// Destroys the current instance of <see cref="ImguiHook"/>.
+        /// Use if you don't plan on using the hook again, such as when unloading a mod.
+        /// </summary>
+        public static void Destroy()
         {
-            ImGui.ImGuiImplWin32Shutdown();
+            Disable();
+            if (Initialized)
+                ImGui.ImGuiImplWin32Shutdown();
+
+            Implementation?.Dispose();
             ImGui.DestroyContext(Context);
+            Context?.Dispose();
+
+            Render = null;
+            Implementation = null;
+            Context = null;
+            WndProcHook = null;
+            WindowHandle = IntPtr.Zero;
+            Initialized = false;
+
+            _created = false;
+        }
+
+        /// <summary>
+        /// Enables the <see cref="ImguiHook"/> after it has been temporarily disabled.
+        /// </summary>
+        public static void Enable()
+        {
+            WndProcHook?.Enable();
+            Implementation?.Enable();
+        }
+
+        /// <summary>
+        /// Disables the <see cref="ImguiHook"/> temporarily.
+        /// </summary>
+        public static void Disable()
+        {
+            WndProcHook?.Disable();
+            Implementation?.Disable();
         }
 
         /// <summary>
         /// Hooks WndProc to allow for input for ImGui
         /// </summary>
-        private unsafe IntPtr WndProcHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+        [UnmanagedCallersOnly(CallConvs = new []{ typeof(CallConvStdcall) })]
+        private static unsafe IntPtr WndProcHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             ImGui.ImplWin32_WndProcHandler((void*) hWnd, msg, wParam, lParam);
-            return WndProcHook.Hook.OriginalFunction(hWnd, msg, wParam, lParam);
+            return WndProcHook.Hook.OriginalFunction.Value.Invoke(hWnd, msg, wParam, lParam);
         }
 
         /// <summary>
         /// Called from renderer implementation, renders a new frame.
         /// </summary>
-        internal void NewFrame()
+        internal static unsafe void NewFrame()
         {
             if (!Initialized)
             {
@@ -99,7 +163,8 @@ namespace Reloaded.Imgui.Hook
                     return;
 
                 ImGui.ImGuiImplWin32Init(WindowHandle); 
-                WndProcHook = new WndProcHook(WindowHandle, WndProcHandler);
+                var wndProcHandlerPtr = (IntPtr) SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook), nameof(WndProcHandler));
+                WndProcHook = WndProcHook.Create(WindowHandle, Unsafe.As<IntPtr, WndProcHook.WndProc>(ref wndProcHandlerPtr));
                 Initialized = true;
             }
 
@@ -107,68 +172,6 @@ namespace Reloaded.Imgui.Hook
             ImGui.NewFrame();
             Render();
             ImGui.Render();
-        }
-
-        /// <summary>
-        /// Creates a new hook given the Reloaded.Hooks library.
-        /// The library will hook to the main window.
-        /// </summary>
-        /// <param name="render">Renders your imgui UI</param>
-        public static async Task<ImguiHook> Create(Action render)
-        {
-            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            return Create(render, IntPtr.Zero, dxVersion);
-        }
-
-        /// <summary>
-        /// Creates a new hook given the Reloaded.Hooks library.
-        /// The library will hook to the main window.
-        /// </summary>
-        /// <param name="render">Renders your imgui UI</param>
-        /// <param name="windowHandle">Handle of the window to draw on.</param>
-        public static async Task<ImguiHook> Create(Action render, IntPtr windowHandle)
-        {
-            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            return Create(render, windowHandle, dxVersion);
-        }
-
-        /// <summary>
-        /// Creates a new ImGui hook.
-        /// </summary>
-        /// <param name="render">Renders your imgui UI</param>
-        /// <param name="windowHandle">Handle to the window to render on. Pass IntPtr.Zero to select main window.</param>
-        /// <param name="version">DirectX version to handle.</param>
-        public static ImguiHook Create(Action render, IntPtr windowHandle, Direct3DVersion version)
-        {
-            var hook = new ImguiHook(render, windowHandle);
-
-            if (Utility.IsD3D11(version))
-            {
-                hook.Implementation = new ImguiHookDX11(hook);
-            }
-            else if (Utility.IsD3D9(version))
-            {
-                hook.Implementation = new ImguiHookDX9(hook);
-            }
-            else
-            {
-                hook.Disable();
-                throw new Exception("Unsupported or not found DirectX version.");
-            }
-            
-            return hook;
-        }
-
-        public void Enable()
-        {
-            WndProcHook?.Enable();
-            Implementation?.Enable();
-        }
-
-        public void Disable()
-        {
-            WndProcHook?.Disable();
-            Implementation?.Disable();
         }
     }
 }

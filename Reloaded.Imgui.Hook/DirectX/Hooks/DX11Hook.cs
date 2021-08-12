@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Reloaded.Hooks.Definitions;
+using Reloaded.Hooks.Definitions.Structs;
 using Reloaded.Hooks.Definitions.X64;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using SharpDX.Direct3D;
@@ -15,19 +16,19 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
     /// <summary>
     /// Provides access to DirectX 11 functions.
     /// </summary>
-    public class DX11Hook
+    public static class DX11Hook
     {
         /// <summary>
         /// Contains the DX11 Device VTable.
         /// </summary>
-        public IVirtualFunctionTable VTable { get; private set; }
+        public static IVirtualFunctionTable VTable { get; private set; }
 
         /// <summary>
         /// Contains the DX11 DXGI Swapchain VTable.
         /// </summary>
-        public IVirtualFunctionTable DXGIVTable { get; private set; }
+        public static IVirtualFunctionTable DXGIVTable { get; private set; }
 
-        public DX11Hook(IReloadedHooks _hooks)
+        static DX11Hook()
         {
             // Define
             Device dx11Device;
@@ -36,8 +37,8 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
 
             // Get Table
             Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.None, GetSwapChainDescription(renderForm.Handle), out dx11Device, out dxgiSwapChain);
-            VTable = _hooks.VirtualFunctionTableFromObject(dx11Device.NativePointer, Enum.GetNames(typeof(ID3D11Device)).Length);
-            DXGIVTable = _hooks.VirtualFunctionTableFromObject(dxgiSwapChain.NativePointer, Enum.GetNames(typeof(IDXGISwapChain)).Length);
+            VTable = SDK.Hooks.VirtualFunctionTableFromObject(dx11Device.NativePointer, Enum.GetNames(typeof(ID3D11Device)).Length);
+            DXGIVTable = SDK.Hooks.VirtualFunctionTableFromObject(dxgiSwapChain.NativePointer, Enum.GetNames(typeof(IDXGISwapChain)).Length);
 
             // Cleanup
             dxgiSwapChain.Dispose();
@@ -45,7 +46,7 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
             renderForm.Dispose();
         }
 
-        private SwapChainDescription GetSwapChainDescription(IntPtr formHandle)
+        private static SwapChainDescription GetSwapChainDescription(IntPtr formHandle)
         {
             return new SwapChainDescription()
             {
@@ -56,23 +57,13 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
                 SampleDescription = new SampleDescription(1, 0),
             };
         }
-
-        /// <summary>
-        /// Defines the IDXGISwapChain.Present function, used to show the rendered image right to the user.
-        /// </summary>
-        /// <param name="swapChainPtr">The pointer to the actual swapchain, `this` object.</param>
-        /// <param name="syncInterval">An integer that specifies how to synchronize presentation of a frame with the vertical blank.</param>
-        /// <param name="flags">An integer value that contains swap-chain presentation options. These options are defined by the DXGI_PRESENT constants.</param>
-        [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
-        [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
-        public delegate IntPtr Present(IntPtr swapChainPtr, int syncInterval, PresentFlags flags);
         
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
-        public delegate IntPtr ResizeTarget(IntPtr swapChainPtr, ref ModeDescription newTargetParameters);
+        public struct Present { public FuncPtr<IntPtr, int, PresentFlags, IntPtr> Value; }
         
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
-        public delegate IntPtr ResizeBuffers(IntPtr swapChainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapChainFlags);
+        public struct ResizeBuffers { public FuncPtr<IntPtr, uint, uint, uint, Format, uint, IntPtr> Value; }
     }
 }
