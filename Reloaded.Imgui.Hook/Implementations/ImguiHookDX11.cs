@@ -59,7 +59,6 @@ namespace Reloaded.Imgui.Hook.Implementations
                 return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
 
             _resizeRecursionLock = true;
-
             var swapChain = new SwapChain(swapchainPtr);
             var windowHandle = swapChain.Description.OutputHandle;
             Debug.DebugWriteLine($"[DX11 ResizeBuffers] Window Handle {windowHandle}");
@@ -106,7 +105,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             _presentRecursionLock = true;
             var swapChain = new SwapChain(swapChainPtr);
             var windowHandle = swapChain.Description.OutputHandle;
-            Debug.DebugWriteLine($"[DX11 Present] Window Handle {windowHandle}");
 
             // Ignore windows which don't belong to us.
             if (!ImguiHook.CheckWindowHandle(windowHandle))
