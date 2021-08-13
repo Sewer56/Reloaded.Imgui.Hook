@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -190,6 +190,7 @@ namespace Reloaded.Imgui.Hook
             ImGui.ImGuiImplWin32NewFrame();
             ImGui.NewFrame();
             Render();
+            ImGui.EndFrame();
             ImGui.Render();
         }
     }
