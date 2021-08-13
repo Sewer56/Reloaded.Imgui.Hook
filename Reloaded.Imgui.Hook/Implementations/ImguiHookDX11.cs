@@ -119,6 +119,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             using var device = swapChain.GetDevice<Device>();
             if (!_initialized)
             {
+                ImguiHook.InitializeWithHandle(windowHandle);
                 ImGui.ImGuiImplDX11Init((void*) device.NativePointer, (void*) device.ImmediateContext.NativePointer);
 
                 using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
@@ -127,7 +128,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
 
             ImGui.ImGuiImplDX11NewFrame();
-            ImguiHook.NewFrame(windowHandle);
+            ImguiHook.NewFrame();
             device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX11RenderDrawData(drawData);

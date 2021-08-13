@@ -100,12 +100,13 @@ namespace Reloaded.Imgui.Hook.Implementations
                 if (_windowHandle == IntPtr.Zero)
                     return _endSceneHook.OriginalFunction.Value.Invoke(device);
 
+                ImguiHook.InitializeWithHandle(windowHandle);
                 ImGui.ImGuiImplDX9Init((void*)device);
                 _initialized = true;
             }
 
             ImGui.ImGuiImplDX9NewFrame();
-            ImguiHook.NewFrame(_windowHandle);
+            ImguiHook.NewFrame();
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX9RenderDrawData(drawData);
 

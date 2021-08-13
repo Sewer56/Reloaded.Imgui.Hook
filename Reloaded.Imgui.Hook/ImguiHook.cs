@@ -219,10 +219,11 @@ namespace Reloaded.Imgui.Hook
             return false;
         }
 
+
         /// <summary>
         /// Called from renderer implementation, renders a new frame.
         /// </summary>
-        internal static unsafe void NewFrame(IntPtr windowHandle)
+        internal static unsafe void InitializeWithHandle(IntPtr windowHandle)
         {
             if (!Initialized)
             {
@@ -232,12 +233,18 @@ namespace Reloaded.Imgui.Hook
                 if (WindowHandle == IntPtr.Zero)
                     return;
 
-                ImGui.ImGuiImplWin32Init(WindowHandle); 
-                var wndProcHandlerPtr = (IntPtr) SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook), nameof(WndProcHandler));
+                ImGui.ImGuiImplWin32Init(WindowHandle);
+                var wndProcHandlerPtr = (IntPtr)SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook), nameof(WndProcHandler));
                 WndProcHook = WndProcHook.Create(WindowHandle, Unsafe.As<IntPtr, WndProcHook.WndProc>(ref wndProcHandlerPtr));
                 Initialized = true;
             }
-            
+        }
+
+        /// <summary>
+        /// Called from renderer implementation, renders a new frame.
+        /// </summary>
+        internal static unsafe void NewFrame()
+        {
             ImGui.ImGuiImplWin32NewFrame();
             ImGui.NewFrame();
             Render();

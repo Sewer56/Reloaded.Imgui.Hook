@@ -22,7 +22,7 @@ namespace Reloaded.Imgui.Hook.DirectX
 
             // Loop until DirectX module found.
             var versions = Direct3DVersion.Null;
-            while (versions == Direct3DVersion.Null)
+            while (true)
             {
                 if ((long)GetModuleHandle("d3d9.dll") != 0) { versions |= Direct3DVersion.Direct3D9; }
                 if ((long)GetModuleHandle("d3d10.dll") != 0) { versions |= Direct3DVersion.Direct3D10; }
@@ -38,11 +38,14 @@ namespace Reloaded.Imgui.Hook.DirectX
                     throw new Exception("DirectX module not found, the application is either not a DirectX application or uses an unsupported version of DirectX.");
 
                 // Check every X milliseconds.
+                if (versions != Direct3DVersion.Null)
+                {
+                    Debug.WriteLine($"DirectX Versions Detected: {versions}");
+                    return versions;
+                }
+                
                 await Task.Delay(retryTime);
             }
-
-            Debug.WriteLine($"DirectX Versions Detected: {versions}");
-            return versions;
         }
 
         /// <summary>
