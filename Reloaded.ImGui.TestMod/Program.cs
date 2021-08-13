@@ -6,6 +6,8 @@ using Reloaded.Imgui.Hook;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using DearImguiSharp;
+using Reloaded.Imgui.Hook.DirectX.Definitions;
+using Reloaded.Imgui.Hook.DirectX.Hooks;
 
 namespace Reloaded.ImGui.TestMod
 {
@@ -46,8 +48,8 @@ namespace Reloaded.ImGui.TestMod
             SDK.Init(_hooks, s => { _logger.WriteLine(s); });
             await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
             {
-                EnableViewports = false,
-                IgnoreWindowUnactivate = false
+                EnableViewports = true,
+                IgnoreWindowUnactivate = true
             }).ConfigureAwait(false);
         }
 
