@@ -6,6 +6,5 @@ namespace Reloaded.Imgui.Hook.Implementations
     {
         void Disable();
         void Enable();
-        IntPtr GetWindowHandle();
     }
 }

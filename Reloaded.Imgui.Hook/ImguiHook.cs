@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -8,6 +8,7 @@ using DearImguiSharp;
 using Reloaded.Imgui.Hook.DirectX;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
+using Reloaded.Imgui.Hook.Misc;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -42,6 +43,17 @@ namespace Reloaded.Imgui.Hook
         /// True if the hook has been initialized, else false.
         /// </summary>
         public static bool Initialized { get; private set; }
+
+        /// <summary>
+        /// Allows access to ImGui IO Settings.
+        /// </summary>
+        public static ImGuiIO IO { get; private set; }
+
+        /// <summary>
+        /// The options with which this hook has been created with.
+        /// </summary>
+        public static ImguiHookOptions Options { get; private set; }
+
         private static bool _created = false;
 
         /// <summary>
@@ -49,13 +61,14 @@ namespace Reloaded.Imgui.Hook
         /// The library will hook to the main window.
         /// </summary>
         /// <param name="render">Renders your imgui UI</param>
-        public static async Task Create(Action render)
+        /// <param name="options">The options with which to initialise the hook.</param>
+        public static async Task Create(Action render, ImguiHookOptions options = null)
         {
             if (_created)
                 return;
 
             var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            Create(render, IntPtr.Zero, dxVersion);
+            Create(render, IntPtr.Zero, dxVersion, options);
         }
 
         /// <summary>
@@ -64,13 +77,14 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         /// <param name="render">Renders your imgui UI</param>
         /// <param name="windowHandle">Handle of the window to draw on.</param>
-        public static async Task Create(Action render, IntPtr windowHandle)
+        /// <param name="options">The options with which to initialise the hook.</param>
+        public static async Task Create(Action render, IntPtr windowHandle, ImguiHookOptions options = null)
         {
             if (_created)
                 return;
 
             var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            Create(render, windowHandle, dxVersion);
+            Create(render, windowHandle, dxVersion, options);
         }
 
         /// <summary>
@@ -79,16 +93,21 @@ namespace Reloaded.Imgui.Hook
         /// <param name="render">Renders your imgui UI</param>
         /// <param name="windowHandle">Handle to the window to render on. Pass IntPtr.Zero to select main window.</param>
         /// <param name="version">DirectX version to handle.</param>
-        public static void Create(Action render, IntPtr windowHandle, Direct3DVersion version)
+        /// <param name="options">The options with which to initialise the hook.</param>
+        public static void Create(Action render, IntPtr windowHandle, Direct3DVersion version, ImguiHookOptions options = null)
         {
             _created = true;
             Render = render;
             WindowHandle = windowHandle;
             Context = ImGui.CreateContext(null);
+            IO = Context.IO;
+            Options = options ?? new ImguiHookOptions();
+
+            if (Options.EnableViewports)
+                IO.ConfigFlags |= (int)ImGuiConfigFlags.ImGuiConfigFlagsViewportsEnable;
+
             ImGui.StyleColorsDark(null);
-
             Implementations = new List<IImguiHook>();
-
             if (Utility.IsD3D11(version))
                 Implementations.Add(ImguiHookDX11.Instance);
             if (Utility.IsD3D9(version))
@@ -165,7 +184,39 @@ namespace Reloaded.Imgui.Hook
         private static unsafe IntPtr WndProcHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             ImGui.ImplWin32_WndProcHandler((void*) hWnd, msg, wParam, lParam);
+
+            if (Options.IgnoreWindowUnactivate)
+            {
+                var message = (WindowMessage) msg;
+                switch (message)
+                {
+                    case WindowMessage.WM_KILLFOCUS:
+                        return IntPtr.Zero;
+
+                    case WindowMessage.WM_ACTIVATE:
+                    case WindowMessage.WM_ACTIVATEAPP:
+                        if (wParam == IntPtr.Zero)
+                            return IntPtr.Zero;
+
+                        break;
+                }
+            }
+
             return WndProcHook.Hook.OriginalFunction.Value.Invoke(hWnd, msg, wParam, lParam);
+        }
+
+        /// <summary>
+        /// Checks if the provided window handle matches the window handle associated with this context.
+        /// If not initialised, accepts only IntPtr.Zero
+        /// </summary>
+        /// <param name="windowHandle">The window handle.</param>
+        internal static bool CheckWindowHandle(IntPtr windowHandle)
+        {
+            // Check for exact handle.
+            if (windowHandle != IntPtr.Zero)
+                return windowHandle == WindowHandle || !Initialized;
+
+            return false;
         }
 
         /// <summary>
@@ -186,12 +237,18 @@ namespace Reloaded.Imgui.Hook
                 WndProcHook = WndProcHook.Create(WindowHandle, Unsafe.As<IntPtr, WndProcHook.WndProc>(ref wndProcHandlerPtr));
                 Initialized = true;
             }
-
+            
             ImGui.ImGuiImplWin32NewFrame();
             ImGui.NewFrame();
             Render();
             ImGui.EndFrame();
             ImGui.Render();
+
+            if ((IO.ConfigFlags & (int)ImGuiConfigFlags.ImGuiConfigFlagsViewportsEnable) > 0)
+            {
+                ImGui.UpdatePlatformWindows();
+                ImGui.RenderPlatformWindowsDefault(IntPtr.Zero, IntPtr.Zero);
+            }
         }
     }
 }

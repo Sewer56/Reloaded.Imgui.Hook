@@ -8,6 +8,7 @@ using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Hooks;
 using Reloaded.Imgui.Hook.Misc;
 using SharpDX.Direct3D9;
+using Debug = Reloaded.Imgui.Hook.Misc.Debug;
 using Format = SharpDX.DXGI.Format;
 using IDirect3DDevice9 = DearImguiSharp.IDirect3DDevice9;
 using PresentFlags = SharpDX.DXGI.PresentFlags;
@@ -17,12 +18,13 @@ namespace Reloaded.Imgui.Hook.Implementations
     public unsafe class ImguiHookDX9 : IImguiHook
     {
         public static ImguiHookDX9 Instance { get; private set; } = new ImguiHookDX9();
-
+        
         private IHook<DX9Hook.EndScene> _endSceneHook;
         private IHook<DX9Hook.Reset> _resetHook;
         private IHook<DX9Hook.CreateDevice> _createDeviceHook;
         private bool _initialized = false;
         private IntPtr _windowHandle;
+        private bool _endSceneRecursionLock = false;
 
         public ImguiHookDX9()
         {
@@ -54,29 +56,47 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private unsafe IntPtr CreateDeviceImpl(IntPtr direct3dpointer, uint adapter, DeviceType devicetype, IntPtr hfocuswindow, CreateFlags behaviorflags, PresentParameters* ppresentationparameters, int** ppreturneddeviceinterface)
         {
-            if (hfocuswindow != IntPtr.Zero)
-                _windowHandle = hfocuswindow;
-            else if (ppresentationparameters->DeviceWindowHandle != IntPtr.Zero)
-                _windowHandle = ppresentationparameters->DeviceWindowHandle;
+            var windowHandle = hfocuswindow != IntPtr.Zero ? hfocuswindow : ppresentationparameters->DeviceWindowHandle;
 
-            Misc.Debug.WriteLine($"Create Window Handle {(long)_windowHandle:X}");
+            // Ignore windows which don't belong to us.
+            if (!ImguiHook.CheckWindowHandle(windowHandle))
+            {
+                Debug.WriteLine($"[DX9 EndScene] Discarding Window Handle");
+                return _createDeviceHook.OriginalFunction.Value.Invoke(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
+            }
+
+            if (windowHandle != IntPtr.Zero)
+                _windowHandle = hfocuswindow;
+
+            Debug.WriteLine($"Create Window Handle {(long)_windowHandle:X}");
             return _createDeviceHook.OriginalFunction.Value.Invoke(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
         }
 
-
         private unsafe IntPtr EndSceneImpl(IntPtr device)
         {
+            // With multi-viewports, ImGui might call EndScene again; so we need to prevent stack overflow here.
+            if (_endSceneRecursionLock)
+                return _endSceneHook.OriginalFunction.Value.Invoke(device);
+
+            _endSceneRecursionLock = true;
+            var dev = new Device(device);
+            var windowHandle = dev.CreationParameters.HFocusWindow;
+
+            // Ignore windows which don't belong to us.
+            if (!ImguiHook.CheckWindowHandle(windowHandle))
+            {
+                Debug.WriteLine($"[DX9 EndScene] Discarding Window Handle");
+                return _endSceneHook.OriginalFunction.Value.Invoke(device);
+            }
+
             if (!_initialized)
             {
                 // Try our best to initialize if not hooked at boot.
                 // This can fail though if window handle is only passed in presentation parameters.
                 if (_windowHandle == IntPtr.Zero)
-                {
-                    var dev = new Device(device);
-                    _windowHandle = dev.CreationParameters.HFocusWindow;
-                }
+                    _windowHandle = windowHandle;
 
-                Misc.Debug.WriteLine($"EndScene Window Handle {(long)_windowHandle:X}");
+                Debug.WriteLine($"EndScene Window Handle {(long)_windowHandle:X}");
                 if (_windowHandle == IntPtr.Zero)
                     return _endSceneHook.OriginalFunction.Value.Invoke(device);
 
@@ -85,16 +105,24 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
 
             ImGui.ImGuiImplDX9NewFrame();
-            ImguiHook.NewFrame(GetWindowHandle());
+            ImguiHook.NewFrame(_windowHandle);
             using var drawData = ImGui.GetDrawData();
             ImGui.ImGuiImplDX9RenderDrawData(drawData);
 
+            _endSceneRecursionLock = false;
             return _endSceneHook.OriginalFunction.Value.Invoke(device);
         }
 
         private IntPtr ResetImpl(IntPtr device, PresentParameters* presentParameters)
         {
-            Misc.Debug.WriteLine($"Reset Handle {(long)presentParameters->DeviceWindowHandle:X}");
+            // Ignore windows which don't belong to us.
+            if (!ImguiHook.CheckWindowHandle(presentParameters->DeviceWindowHandle))
+            {
+                Debug.WriteLine($"[DX9 EndScene] Discarding Window Handle");
+                return _endSceneHook.OriginalFunction.Value.Invoke(device);
+            }
+
+            Debug.WriteLine($"Reset Handle {(long)presentParameters->DeviceWindowHandle:X}");
             ImGui.ImGuiImplDX9InvalidateDeviceObjects();
             var result = _resetHook.OriginalFunction.Value.Invoke(device, presentParameters);
             ImGui.ImGuiImplDX9CreateDeviceObjects();
@@ -112,8 +140,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             _endSceneHook.Enable();
             _resetHook.Enable();
         }
-
-        public IntPtr GetWindowHandle() => _windowHandle;
 
         #region Hook Functions
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]

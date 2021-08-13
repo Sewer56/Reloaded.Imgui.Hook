@@ -44,7 +44,11 @@ namespace Reloaded.ImGui.TestMod
 
             /* Your mod code starts here. */
             SDK.Init(_hooks, s => { _logger.WriteLine(s); });
-            await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
+            await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
+            {
+                EnableViewports = false,
+                IgnoreWindowUnactivate = false
+            }).ConfigureAwait(false);
         }
 
         private void RenderTestWindow()
