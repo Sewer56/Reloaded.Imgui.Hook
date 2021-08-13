@@ -43,8 +43,9 @@ namespace Reloaded.Imgui.Hook.DirectX
                     Debug.WriteLine($"DirectX Versions Detected: {versions}");
                     return versions;
                 }
-                
-                await Task.Delay(retryTime);
+
+
+                await Task.Delay(retryTime).ConfigureAwait(false);
             }
         }
 
