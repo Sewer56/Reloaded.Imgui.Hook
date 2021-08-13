@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
@@ -22,8 +23,15 @@ namespace Reloaded.Imgui.Hook.Implementations
         private IHook<DX11Hook.ResizeBuffers> _resizeBuffersHook;
         private bool _initialized = false;
         private RenderTargetView _renderTargetView;
-        private bool _presentRecursionLock = false;
-        private bool _resizeRecursionLock = false;
+
+        /*
+         * In some cases (E.g. under DX9 + Viewports enabled), Dear ImGui might call
+         * DirectX functions from within its internal logic.
+         *
+         * We put a lock on the current thread in order to prevent stack overflow.
+         */
+        private ThreadLocal<bool> _presentRecursionLock = new ThreadLocal<bool>();
+        private ThreadLocal<bool> _resizeRecursionLock = new ThreadLocal<bool>();
 
         public ImguiHookDX11()
         {
@@ -54,28 +62,33 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private IntPtr ResizeBuffersImpl(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
         {
-            // Just in case Dear ImGui tries calling this again, like with DX9.
-            if (_resizeRecursionLock)
+            if (_resizeRecursionLock.Value)
                 return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
 
-            _resizeRecursionLock = true;
-            var swapChain = new SwapChain(swapchainPtr);
-            var windowHandle = swapChain.Description.OutputHandle;
-            Debug.DebugWriteLine($"[DX11 ResizeBuffers] Window Handle {windowHandle}");
-
-            // Ignore windows which don't belong to us.
-            if (!ImguiHook.CheckWindowHandle(windowHandle))
+            _resizeRecursionLock.Value = true;
+            try
             {
-                Debug.WriteLine($"[DX11 ResizeBuffers] Discarding Window Handle {windowHandle} due to Mismatch");
-                return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+                var swapChain = new SwapChain(swapchainPtr);
+                var windowHandle = swapChain.Description.OutputHandle;
+                Debug.DebugWriteLine($"[DX11 ResizeBuffers] Window Handle {windowHandle}");
+
+                // Ignore windows which don't belong to us.
+                if (!ImguiHook.CheckWindowHandle(windowHandle))
+                {
+                    Debug.WriteLine($"[DX11 ResizeBuffers] Discarding Window Handle {windowHandle} due to Mismatch");
+                    return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+                }
+
+                PreResizeBuffers();
+                var result = _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+                PostResizeBuffers(swapchainPtr);
+
+                return result;
             }
-
-            PreResizeBuffers();
-            var result = _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
-            PostResizeBuffers(swapchainPtr);
-
-            _resizeRecursionLock = false;
-            return result;
+            finally
+            {
+                _resizeRecursionLock.Value = false;
+            }
         }
 
         private void PreResizeBuffers()
@@ -98,41 +111,46 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private unsafe IntPtr PresentImpl(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
-            // Just in case Dear ImGui tries calling this again, like with DX9.
-            if (_presentRecursionLock)
+            if (_presentRecursionLock.Value)
                 return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
-
-            _presentRecursionLock = true;
-            var swapChain = new SwapChain(swapChainPtr);
-            var windowHandle = swapChain.Description.OutputHandle;
-
-            // Ignore windows which don't belong to us.
-            if (!ImguiHook.CheckWindowHandle(windowHandle))
+            
+            _presentRecursionLock.Value = true;
+            try
             {
-                Debug.WriteLine($"[DX11 Present] Discarding Window Handle {windowHandle} due to Mismatch");
+                var swapChain = new SwapChain(swapChainPtr);
+                var windowHandle = swapChain.Description.OutputHandle;
+
+                // Ignore windows which don't belong to us.
+                if (!ImguiHook.CheckWindowHandle(windowHandle))
+                {
+                    Debug.WriteLine($"[DX11 Present] Discarding Window Handle {windowHandle} due to Mismatch");
+                    return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
+                }
+
+                // Initialise 
+                using var device = swapChain.GetDevice<Device>();
+                if (!_initialized)
+                {
+                    ImguiHook.InitializeWithHandle(windowHandle);
+                    ImGui.ImGuiImplDX11Init((void*)device.NativePointer, (void*)device.ImmediateContext.NativePointer);
+
+                    using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
+                    _renderTargetView = new RenderTargetView(device, backBuffer);
+                    _initialized = true;
+                }
+
+                ImGui.ImGuiImplDX11NewFrame();
+                ImguiHook.NewFrame();
+                device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
+                using var drawData = ImGui.GetDrawData();
+                ImGui.ImGuiImplDX11RenderDrawData(drawData);
+
                 return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
             }
-
-            // Initialise 
-            using var device = swapChain.GetDevice<Device>();
-            if (!_initialized)
+            finally
             {
-                ImguiHook.InitializeWithHandle(windowHandle);
-                ImGui.ImGuiImplDX11Init((void*) device.NativePointer, (void*) device.ImmediateContext.NativePointer);
-
-                using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
-                _renderTargetView = new RenderTargetView(device, backBuffer);
-                _initialized = true;
+                _presentRecursionLock.Value = false;
             }
-
-            ImGui.ImGuiImplDX11NewFrame();
-            ImguiHook.NewFrame();
-            device.ImmediateContext.OutputMerger.SetRenderTargets(_renderTargetView);
-            using var drawData = ImGui.GetDrawData();
-            ImGui.ImGuiImplDX11RenderDrawData(drawData);
-
-            _presentRecursionLock = false;
-            return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
         }
 
         public void Disable()
