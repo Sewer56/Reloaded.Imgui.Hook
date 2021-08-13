@@ -79,9 +79,6 @@ If you would like to try the library, try the test mod for [Reloaded-II](https:/
 
 Simply compile `Reloaded.ImGui.TestMod` and add to your Reloaded-II mods directory.
 
-## Known Issues
-- [13 Aug 2021]: DX11 Hook Crashes on Resize if ImGui `Reloaded.Imgui.Hook` is applied after Steam overlay. This will likely be fixed by improving existing hook patching heuristics in `Reloaded.Hooks`.
-
 ## Contributions
 Contributions are very welcome and encouraged; especially given that I'm not really a graphics programmer. I only have some experience in OpenGL 3 as opposed to DirectX 😉. 
 
