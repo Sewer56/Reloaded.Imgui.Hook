@@ -2,7 +2,8 @@
 	<h1>Dear Imgui Hook for Reloaded</h1>
 	<img src="https://i.imgur.com/BjPn7rU.png" width="150" align="center" />
 	<br/> <br/>
-	<strong><i>Making life a bit easier.</i></strong>
+	<strong><i>Making life a bit easier.</i></strong><br/>
+	<strong><i>Current ImGui Version: 1.83 Docking</i></strong>
 	<br/> <br/>
 </div>
 
@@ -29,7 +30,7 @@ First call `SDK.Init` to initialize all static variables used by the library, th
 ```csharp
 // During initialization.
 SDK.Init(_hooks);
-_imguiHook = await ImguiHook.Create(RenderTestWindow);
+_imguiHook = await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
 
 private void RenderTestWindow()
 {
@@ -38,6 +39,17 @@ private void RenderTestWindow()
 ```
 
 The `_hooks` variable is an instance of `IReloadedHooks` from [Reloaded.Hooks](https://github.com/Reloaded-Project/Reloaded.Hooks). In a [Reloaded-II](https://github.com/Reloaded-Project/Reloaded-II) mod, this is part of your mod template. Otherwise, add [Reloaded.Hooks](https://github.com/Reloaded-Project/Reloaded.Hooks) to your project and pass `new ReloadedHooks()` to the method.
+
+### Enabling Docking Support
+Use the specialised overload with `ImguiHookOptions`.
+
+```csharp
+await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
+{
+    EnableViewports = true, // Enable docking.
+    IgnoreWindowUnactivate = true // May help if game pauses when it loses focus.
+}).ConfigureAwait(false);
+```
 
 ### Enabling / Disabling the Overlay
 
@@ -66,6 +78,9 @@ Will implement D3D10 if there's any demand.
 If you would like to try the library, try the test mod for [Reloaded-II](https://github.com/Reloaded-Project/Reloaded-II) available in this repository.
 
 Simply compile `Reloaded.ImGui.TestMod` and add to your Reloaded-II mods directory.
+
+## Known Issues
+- [13 Aug 2021]: DX11 Hook Crashes on Resize if ImGui `Reloaded.Imgui.Hook` is applied after Steam overlay. This will likely be fixed by improving existing hook patching heuristics in `Reloaded.Hooks`.
 
 ## Contributions
 Contributions are very welcome and encouraged; especially given that I'm not really a graphics programmer. I only have some experience in OpenGL 3 as opposed to DirectX 😉. 
