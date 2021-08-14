@@ -79,6 +79,9 @@ If you would like to try the library, try the test mod for [Reloaded-II](https:/
 
 Simply compile `Reloaded.ImGui.TestMod` and add to your Reloaded-II mods directory.
 
+## Known Issues
+- [14 August 2021]: When viewports are Enabled and being used (window outside app/game window), destroying the hook instance (and this imgui context) may crash the application. I believe this a dear imgui issue.
+
 ## Contributions
 Contributions are very welcome and encouraged; especially given that I'm not really a graphics programmer. I only have some experience in OpenGL 3 as opposed to DirectX 😉. 
 
