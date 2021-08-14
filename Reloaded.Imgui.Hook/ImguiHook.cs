@@ -9,6 +9,7 @@ using Reloaded.Imgui.Hook.DirectX;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
 using Reloaded.Imgui.Hook.Misc;
+using Debug = Reloaded.Imgui.Hook.Misc.Debug;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -127,8 +128,12 @@ namespace Reloaded.Imgui.Hook
         public static void Destroy()
         {
             Disable();
+
             if (Initialized)
+            {
+                Debug.WriteLine($"[ImguiHook Destroy] Win32 Shutdown");
                 ImGui.ImGuiImplWin32Shutdown();
+            }
 
             if (Implementations != null)
             {
@@ -137,7 +142,9 @@ namespace Reloaded.Imgui.Hook
                     implementation?.Dispose();
                 }
             }
-            
+
+            Debug.WriteLine($"[ImguiHook Destroy] Destroy Context");
+
             ImGui.DestroyContext(Context);
             Context?.Dispose();
 
@@ -227,12 +234,11 @@ namespace Reloaded.Imgui.Hook
         {
             if (!Initialized)
             {
-                if (WindowHandle == IntPtr.Zero)
-                    WindowHandle = windowHandle;
-
+                WindowHandle = windowHandle;
                 if (WindowHandle == IntPtr.Zero)
                     return;
 
+                Debug.WriteLine($"[ImguiHook] Init with Window Handle {(long)WindowHandle:X}");
                 ImGui.ImGuiImplWin32Init(WindowHandle);
                 var wndProcHandlerPtr = (IntPtr)SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook), nameof(WndProcHandler));
                 WndProcHook = WndProcHook.Create(WindowHandle, Unsafe.As<IntPtr, WndProcHook.WndProc>(ref wndProcHandlerPtr));

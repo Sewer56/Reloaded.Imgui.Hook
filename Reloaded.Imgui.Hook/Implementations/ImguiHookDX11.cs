@@ -57,13 +57,19 @@ namespace Reloaded.Imgui.Hook.Implementations
         {
             _renderTargetView?.Dispose();
             if (_initialized)
+            {
+                Debug.WriteLine($"[DX11 Dispose] Shutdown");
                 ImGui.ImGuiImplDX11Shutdown();
+            }
         }
 
         private IntPtr ResizeBuffersImpl(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
         {
             if (_resizeRecursionLock.Value)
+            {
+                Debug.WriteLine($"[DX11 ResizeBuffers] Discarding via Recursion Lock");
                 return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
+            }
 
             _resizeRecursionLock.Value = true;
             try
@@ -112,7 +118,10 @@ namespace Reloaded.Imgui.Hook.Implementations
         private unsafe IntPtr PresentImpl(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
             if (_presentRecursionLock.Value)
+            {
+                Debug.WriteLine($"[DX11 Present] Discarding via Recursion Lock");
                 return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
+            }
             
             _presentRecursionLock.Value = true;
             try
@@ -131,6 +140,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                 using var device = swapChain.GetDevice<Device>();
                 if (!_initialized)
                 {
+                    Debug.WriteLine($"[DX11 Present] Init DX11, Window Handle: {windowHandle:X}");
                     ImguiHook.InitializeWithHandle(windowHandle);
                     ImGui.ImGuiImplDX11Init((void*)device.NativePointer, (void*)device.ImmediateContext.NativePointer);
 

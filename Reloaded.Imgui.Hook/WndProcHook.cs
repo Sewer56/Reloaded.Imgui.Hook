@@ -36,7 +36,7 @@ namespace Reloaded.Imgui.Hook
         {
             WindowHandle = hWnd;
             var windowProc = Native.GetWindowLong(hWnd, Native.GWL.GWL_WNDPROC);
-            Misc.Debug.WriteLine($"WindowProc: {(long)windowProc:X}");
+            Misc.Debug.WriteLine($"[WndProcHook] WindowProc: {(long)windowProc:X}");
             SetupHook(wndProcHandler, windowProc);
         }
 
