@@ -34,9 +34,9 @@ namespace Reloaded.Imgui.Hook.Implementations
          * We put a lock on the current thread in order to prevent stack overflow.
          */
 
-        private ThreadLocal<bool> _releaseRecursionLock = new ThreadLocal<bool>();
-        private ThreadLocal<bool> _endSceneRecursionLock = new ThreadLocal<bool>();
-        private ThreadLocal<bool> _resetRecursionLock = new ThreadLocal<bool>();
+        private bool _releaseRecursionLock = false;
+        private bool _endSceneRecursionLock = false;
+        private bool _resetRecursionLock = false;
 
         public ImguiHookDX9()
         {
@@ -56,9 +56,6 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         public void Dispose()
         {
-            _releaseRecursionLock?.Dispose();
-            _endSceneRecursionLock?.Dispose();
-            _resetRecursionLock?.Dispose();
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }
@@ -82,13 +79,13 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private int ReleaseImpl(IntPtr device)
         {
-            if (_releaseRecursionLock.Value)
+            if (_releaseRecursionLock)
             {
                 Debug.WriteLine($"[DX9 Release] Discarding via Recursion Lock");
                 return _releaseHook.OriginalFunction.Value.Invoke(device);
             }
 
-            _releaseRecursionLock.Value = true;
+            _releaseRecursionLock = true;
             try
             {
                 var count = _releaseHook.OriginalFunction.Value.Invoke(device);
@@ -102,20 +99,20 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
             finally
             {
-                _releaseRecursionLock.Value = false;
+                _releaseRecursionLock = false;
             }
         }
 
         private unsafe IntPtr EndSceneImpl(IntPtr device)
         {
             // With multi-viewports, ImGui might call EndScene again; so we need to prevent stack overflow here.
-            if (_endSceneRecursionLock.Value)
+            if (_endSceneRecursionLock)
             {
                 Debug.WriteLine($"[DX9 EndScene] Discarding via Recursion Lock");
                 return _endSceneHook.OriginalFunction.Value.Invoke(device);
             }
 
-            _endSceneRecursionLock.Value = true;
+            _endSceneRecursionLock = true;
             try
             {
                 var dev = new Device(device);
@@ -152,20 +149,20 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
             finally
             {
-                _endSceneRecursionLock.Value = false;
+                _endSceneRecursionLock = false;
             }
         }
 
         private IntPtr ResetImpl(IntPtr device, PresentParameters* presentParameters)
         {
             // With multi-viewports, ImGui might call EndScene again; so we need to prevent stack overflow here.
-            if (_resetRecursionLock.Value)
+            if (_resetRecursionLock)
             {
                 Debug.WriteLine($"[DX9 Reset] Discarding via Recursion Lock");
                 return _endSceneHook.OriginalFunction.Value.Invoke(device);
             }
 
-            _resetRecursionLock.Value = true;
+            _resetRecursionLock = true;
             try
             {
                 // Ignore windows which don't belong to us.
@@ -183,7 +180,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
             finally
             {
-                _resetRecursionLock.Value = false;
+                _resetRecursionLock = false;
             }
         }
 

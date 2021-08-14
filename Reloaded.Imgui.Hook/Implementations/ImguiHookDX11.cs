@@ -30,8 +30,8 @@ namespace Reloaded.Imgui.Hook.Implementations
          *
          * We put a lock on the current thread in order to prevent stack overflow.
          */
-        private ThreadLocal<bool> _presentRecursionLock = new ThreadLocal<bool>();
-        private ThreadLocal<bool> _resizeRecursionLock = new ThreadLocal<bool>();
+        private bool _presentRecursionLock = false;
+        private bool _resizeRecursionLock = false;
 
         public ImguiHookDX11()
         {
@@ -55,9 +55,6 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private void ReleaseUnmanagedResources()
         {
-            _presentRecursionLock?.Dispose();
-            _resizeRecursionLock?.Dispose();
-            _renderTargetView?.Dispose();
             if (_initialized)
             {
                 Debug.WriteLine($"[DX11 Dispose] Shutdown");
@@ -67,13 +64,13 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private IntPtr ResizeBuffersImpl(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags)
         {
-            if (_resizeRecursionLock.Value)
+            if (_resizeRecursionLock)
             {
                 Debug.WriteLine($"[DX11 ResizeBuffers] Discarding via Recursion Lock");
                 return _resizeBuffersHook.OriginalFunction.Value.Invoke(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
             }
 
-            _resizeRecursionLock.Value = true;
+            _resizeRecursionLock = true;
             try
             {
                 var swapChain = new SwapChain(swapchainPtr);
@@ -95,7 +92,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
             finally
             {
-                _resizeRecursionLock.Value = false;
+                _resizeRecursionLock = false;
             }
         }
 
@@ -119,13 +116,13 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private unsafe IntPtr PresentImpl(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
-            if (_presentRecursionLock.Value)
+            if (_presentRecursionLock)
             {
                 Debug.WriteLine($"[DX11 Present] Discarding via Recursion Lock");
                 return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
             }
             
-            _presentRecursionLock.Value = true;
+            _presentRecursionLock = true;
             try
             {
                 var swapChain = new SwapChain(swapChainPtr);
@@ -161,7 +158,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
             finally
             {
-                _presentRecursionLock.Value = false;
+                _presentRecursionLock = false;
             }
         }
 
