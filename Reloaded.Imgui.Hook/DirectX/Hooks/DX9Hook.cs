@@ -47,17 +47,23 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
         public struct EndScene { public FuncPtr<IntPtr, IntPtr> Value; }
 
         /// <summary>
+        /// Defines the IDirect3DDevice9.EndScene function, allowing us to render ontop of the DirectX instance.
+        /// </summary>
+        /// <param name="device">Pointer to the individual Direct3D9 device.</param>
+        [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
+        [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
+        public struct Release { public FuncPtr<IntPtr, int> Value; }
+
+        /// <summary>
         /// Defines the IDirect3DDevice9.Reset function, called when the resolution or Windowed/Fullscreen state changes.
         /// changes.
         /// </summary>
         /// <param name="device">Pointer to the individual Direct3D9 device.</param>
         /// <param name="presentParameters">Pointer to a D3DPRESENT_PARAMETERS structure, describing the new presentation parameters.</param>
-        [FunctionHookOptions(PreferRelativeJump = true)]
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public struct Reset { public FuncPtr<IntPtr, BlittablePtr<PresentParameters>, IntPtr> Value; }
-
-        [FunctionHookOptions(PreferRelativeJump = true)]
+        
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public struct CreateDevice { public FuncPtr<IntPtr, uint, DeviceType, IntPtr, CreateFlags, BlittablePtr<PresentParameters>, BlittablePtrPtr<int>, IntPtr> Value; }
