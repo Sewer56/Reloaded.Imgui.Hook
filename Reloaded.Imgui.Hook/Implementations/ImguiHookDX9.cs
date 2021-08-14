@@ -56,6 +56,9 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         public void Dispose()
         {
+            _releaseRecursionLock?.Dispose();
+            _endSceneRecursionLock?.Dispose();
+            _resetRecursionLock?.Dispose();
             ReleaseUnmanagedResources();
             GC.SuppressFinalize(this);
         }

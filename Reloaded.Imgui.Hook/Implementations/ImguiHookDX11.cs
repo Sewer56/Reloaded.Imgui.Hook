@@ -55,6 +55,8 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         private void ReleaseUnmanagedResources()
         {
+            _presentRecursionLock?.Dispose();
+            _resizeRecursionLock?.Dispose();
             _renderTargetView?.Dispose();
             if (_initialized)
             {
