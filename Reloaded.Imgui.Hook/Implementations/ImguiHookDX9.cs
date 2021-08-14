@@ -19,12 +19,13 @@ namespace Reloaded.Imgui.Hook.Implementations
     public unsafe class ImguiHookDX9 : IImguiHook
     {
         public static ImguiHookDX9 Instance { get; private set; } = new ImguiHookDX9();
-        
+
+        private IHook<DX9Hook.Release> _releaseHook;
         private IHook<DX9Hook.EndScene> _endSceneHook;
         private IHook<DX9Hook.Reset> _resetHook;
-        private IHook<DX9Hook.CreateDevice> _createDeviceHook;
         private bool _initialized = false;
         private IntPtr _windowHandle;
+        private IntPtr _device;
 
         /*
          * In some cases (E.g. under DX9 + Viewports enabled), Dear ImGui might call
@@ -32,19 +33,20 @@ namespace Reloaded.Imgui.Hook.Implementations
          *
          * We put a lock on the current thread in order to prevent stack overflow.
          */
+
+        private ThreadLocal<bool> _releaseRecursionLock = new ThreadLocal<bool>();
         private ThreadLocal<bool> _endSceneRecursionLock = new ThreadLocal<bool>();
-        private ThreadLocal<bool> _createDeviceRecursionLock = new ThreadLocal<bool>();
         private ThreadLocal<bool> _resetRecursionLock = new ThreadLocal<bool>();
 
         public ImguiHookDX9()
         {
+            var releasePtr      = (long)DX9Hook.DeviceVTable[(int)DirectX.Definitions.IDirect3DDevice9.Release].FunctionPointer;
             var endScenePtr     = (long) DX9Hook.DeviceVTable[(int) DirectX.Definitions.IDirect3DDevice9.EndScene].FunctionPointer;
             var resetPtr        = (long) DX9Hook.DeviceVTable[(int)DirectX.Definitions.IDirect3DDevice9.Reset].FunctionPointer;
-            var createDevicePtr = (long) DX9Hook.DeviceVTable[(int)IDirect3D9.CreateDevice].FunctionPointer;
 
+            _releaseHook = SDK.Hooks.CreateHook<DX9Hook.Release>(typeof(ImguiHookDX9), nameof(ReleaseStatic), releasePtr).Activate();
             _endSceneHook = SDK.Hooks.CreateHook<DX9Hook.EndScene>(typeof(ImguiHookDX9), nameof(EndSceneImplStatic), endScenePtr).Activate();
             _resetHook = SDK.Hooks.CreateHook<DX9Hook.Reset>(typeof(ImguiHookDX9), nameof(ResetImplStatic), resetPtr).Activate();
-            _createDeviceHook = SDK.Hooks.CreateHook<DX9Hook.CreateDevice>(typeof(ImguiHookDX9), nameof(CreateDeviceImplStatic), createDevicePtr).Activate();
         }
 
         ~ImguiHookDX9()
@@ -58,44 +60,46 @@ namespace Reloaded.Imgui.Hook.Implementations
             GC.SuppressFinalize(this);
         }
 
+        private void Shutdown()
+        {
+            Debug.WriteLine($"[DX9 Shutdown] Shutdown");
+            ImGui.ImGuiImplDX9Shutdown();
+            _windowHandle = IntPtr.Zero;
+            _device = IntPtr.Zero;
+            _initialized = false;
+
+            ImguiHook.Shutdown();
+        }
+
         private void ReleaseUnmanagedResources()
         {
             if (_initialized)
-            {
-                Debug.WriteLine($"[DX9 Dispose] Shutdown");
-                ImGui.ImGuiImplDX9Shutdown();
-            }
+                Shutdown();
         }
 
-        private unsafe IntPtr CreateDeviceImpl(IntPtr direct3dpointer, uint adapter, DeviceType devicetype, IntPtr hfocuswindow, CreateFlags behaviorflags, PresentParameters* ppresentationparameters, int** ppreturneddeviceinterface)
+        private int ReleaseImpl(IntPtr device)
         {
-            if (_createDeviceRecursionLock.Value)
+            if (_releaseRecursionLock.Value)
             {
-                Debug.WriteLine($"[DX9 CreateDevice] Discarding via Recursion Lock");
-                return _createDeviceHook.OriginalFunction.Value.Invoke(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
+                Debug.WriteLine($"[DX9 Release] Discarding via Recursion Lock");
+                return _releaseHook.OriginalFunction.Value.Invoke(device);
             }
 
-            _createDeviceRecursionLock.Value = true;
+            _releaseRecursionLock.Value = true;
             try
             {
-                var windowHandle = hfocuswindow != IntPtr.Zero ? hfocuswindow : ppresentationparameters->DeviceWindowHandle;
-
-                // Ignore windows which don't belong to us.
-                if (!ImguiHook.CheckWindowHandle(windowHandle))
+                var count = _releaseHook.OriginalFunction.Value.Invoke(device);
+                if (count == 0 && _device == device)
                 {
-                    Debug.WriteLine($"[DX9 CreateDevice] Discarding Window Handle {(long)windowHandle:X}");
-                    return _createDeviceHook.OriginalFunction.Value.Invoke(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
+                    Debug.WriteLine($"[DX9 Release] Shutting Down {(long)device:X}");
+                    Shutdown();
                 }
 
-                if (windowHandle != IntPtr.Zero)
-                    _windowHandle = hfocuswindow;
-
-                Debug.WriteLine($"[DX9 CreateDevice] Create Window Handle {(long)_windowHandle:X}");
-                return _createDeviceHook.OriginalFunction.Value.Invoke(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
+                return count;
             }
             finally
             {
-                _createDeviceRecursionLock.Value = false;
+                _releaseRecursionLock.Value = false;
             }
         }
 
@@ -112,7 +116,10 @@ namespace Reloaded.Imgui.Hook.Implementations
             try
             {
                 var dev = new Device(device);
+                using var swapChain = dev.GetSwapChain(0);
                 var windowHandle = dev.CreationParameters.HFocusWindow;
+                var swapChainHandle = swapChain.PresentParameters.DeviceWindowHandle;
+                windowHandle = windowHandle == IntPtr.Zero ? swapChainHandle : windowHandle;
 
                 // Ignore windows which don't belong to us.
                 if (!ImguiHook.CheckWindowHandle(windowHandle))
@@ -123,15 +130,12 @@ namespace Reloaded.Imgui.Hook.Implementations
 
                 if (!_initialized)
                 {
-                    // Try our best to initialize if not hooked at boot.
-                    // This can fail though if window handle is only passed in presentation parameters.
-                    if (_windowHandle == IntPtr.Zero)
-                        _windowHandle = windowHandle;
-                    
-                    if (_windowHandle == IntPtr.Zero)
+                    _device = device;
+                    _windowHandle = windowHandle;
+                    if (_windowHandle == IntPtr.Zero) 
                         return _endSceneHook.OriginalFunction.Value.Invoke(device);
 
-                    Debug.WriteLine($"[DX9 EndScene] Init, Window Handle {(long)_windowHandle:X}");
+                    Debug.WriteLine($"[DX9 EndScene] Init, Window Handle {(long)windowHandle:X}");
                     ImguiHook.InitializeWithHandle(windowHandle);
                     ImGui.ImGuiImplDX9Init((void*)device);
                     _initialized = true;
@@ -194,10 +198,10 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         #region Hook Functions
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-        private static IntPtr CreateDeviceImplStatic(IntPtr direct3dpointer, uint adapter, DeviceType devicetype, IntPtr hfocuswindow, CreateFlags behaviorflags, PresentParameters* ppresentationparameters, int** ppreturneddeviceinterface) => Instance.CreateDeviceImpl(direct3dpointer, adapter, devicetype, hfocuswindow, behaviorflags, ppresentationparameters, ppreturneddeviceinterface);
+        private static IntPtr EndSceneImplStatic(IntPtr device) => Instance.EndSceneImpl(device);
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-        private static IntPtr EndSceneImplStatic(IntPtr device) => Instance.EndSceneImpl(device);
+        private static int ReleaseStatic(IntPtr device) => Instance.ReleaseImpl(device);
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private static IntPtr ResetImplStatic(IntPtr device, PresentParameters* presentParameters) => Instance.ResetImpl(device, presentParameters);

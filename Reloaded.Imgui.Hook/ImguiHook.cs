@@ -128,12 +128,7 @@ namespace Reloaded.Imgui.Hook
         public static void Destroy()
         {
             Disable();
-
-            if (Initialized)
-            {
-                Debug.WriteLine($"[ImguiHook Destroy] Win32 Shutdown");
-                ImGui.ImGuiImplWin32Shutdown();
-            }
+            Shutdown();
 
             if (Implementations != null)
             {
@@ -153,7 +148,6 @@ namespace Reloaded.Imgui.Hook
             Context = null;
             WndProcHook = null;
             WindowHandle = IntPtr.Zero;
-            Initialized = false;
 
             _created = false;
         }
@@ -182,6 +176,19 @@ namespace Reloaded.Imgui.Hook
 
             foreach (var implementation in Implementations)
                 implementation?.Disable();
+        }
+
+        /// <summary>
+        /// Shuts down the Dear ImGui implementations.
+        /// </summary>
+        internal static void Shutdown()
+        {
+            if (Initialized)
+            {
+                Debug.WriteLine($"[ImguiHook Shutdown] Win32 Shutdown");
+                ImGui.ImGuiImplWin32Shutdown();
+                Initialized = false;
+            }
         }
 
         /// <summary>
