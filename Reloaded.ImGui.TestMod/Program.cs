@@ -1,13 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Imgui.Hook;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
-using DearImguiSharp;
-using Reloaded.Imgui.Hook.DirectX.Definitions;
-using Reloaded.Imgui.Hook.DirectX.Hooks;
+using Reloaded.Imgui.Hook.Implementations;
+using System.Collections.Generic;
+using Reloaded.Imgui.Hook.Direct3D11;
 
 namespace Reloaded.ImGui.TestMod
 {
@@ -49,7 +47,12 @@ namespace Reloaded.ImGui.TestMod
             await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
             {
                 EnableViewports = true,
-                IgnoreWindowUnactivate = true
+                IgnoreWindowUnactivate = true,
+                Implementations = new List<IImguiHook>()
+                {
+                    new ImguiHookDx9(),
+                    new ImguiHookDx11()
+                }
             }).ConfigureAwait(false);
         }
 

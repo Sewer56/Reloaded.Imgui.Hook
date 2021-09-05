@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Structs;

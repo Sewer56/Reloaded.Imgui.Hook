@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -21,5 +17,10 @@ namespace Reloaded.Imgui.Hook
         /// Sometimes necessary to stop the application from pausing when <see cref="EnableViewports"/> is turned on.
         /// </summary>
         public bool IgnoreWindowUnactivate = false;
+
+        /// <summary>
+        /// The individual list of implementations.
+        /// </summary>
+        public List<Implementations.IImguiHook> Implementations { get; set; }
     }
 }

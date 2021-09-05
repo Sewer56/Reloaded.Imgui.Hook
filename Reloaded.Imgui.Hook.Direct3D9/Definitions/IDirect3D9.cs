@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Reloaded.Imgui.Hook.DirectX.Definitions
+﻿namespace Reloaded.Imgui.Hook.Direct3D9.Definitions
 {
     /// <summary>
     /// Contains the D3D9 interface.

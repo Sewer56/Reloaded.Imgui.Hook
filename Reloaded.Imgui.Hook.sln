@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30104.148
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Reloaded.Imgui.Hook", "Reloaded.Imgui.Hook\Reloaded.Imgui.Hook.csproj", "{B28CC580-3F4B-43FD-849E-3DCA871AB86D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reloaded.ImGui.TestMod", "Reloaded.ImGui.TestMod\Reloaded.ImGui.TestMod.csproj", "{5CD1D2EC-EA12-4404-BD1C-692366363507}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Reloaded.ImGui.TestMod", "Reloaded.ImGui.TestMod\Reloaded.ImGui.TestMod.csproj", "{5CD1D2EC-EA12-4404-BD1C-692366363507}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reloaded.Imgui.Hook.Direct3D9", "Reloaded.Imgui.Hook.Direct3D9\Reloaded.Imgui.Hook.Direct3D9.csproj", "{A15802EC-05E3-465B-AA70-433EB7BD0609}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reloaded.Imgui.Hook.Direct3D11", "Reloaded.Imgui.Hook.Direct3D11\Reloaded.Imgui.Hook.Direct3D11.csproj", "{5AD6356D-4587-4540-AD98-4903848F281F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +45,30 @@ Global
 		{5CD1D2EC-EA12-4404-BD1C-692366363507}.Release|x64.Build.0 = Release|Any CPU
 		{5CD1D2EC-EA12-4404-BD1C-692366363507}.Release|x86.ActiveCfg = Release|Any CPU
 		{5CD1D2EC-EA12-4404-BD1C-692366363507}.Release|x86.Build.0 = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|x64.Build.0 = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Debug|x86.Build.0 = Debug|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|x64.ActiveCfg = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|x64.Build.0 = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|x86.ActiveCfg = Release|Any CPU
+		{A15802EC-05E3-465B-AA70-433EB7BD0609}.Release|x86.Build.0 = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|x64.Build.0 = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Debug|x86.Build.0 = Debug|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|x64.ActiveCfg = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|x64.Build.0 = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|x86.ActiveCfg = Release|Any CPU
+		{5AD6356D-4587-4540-AD98-4903848F281F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

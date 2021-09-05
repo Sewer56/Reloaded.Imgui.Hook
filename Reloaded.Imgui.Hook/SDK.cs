@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Reloaded.Hooks.Definitions;
+using Reloaded.Imgui.Hook.Implementations;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -14,7 +16,7 @@ namespace Reloaded.Imgui.Hook
         /// Allows you to receive debugging notifications.
         /// </summary>
         public static Action<string> Debug { get; set; }
-
+        
         /// <summary>
         /// Initializes the library.
         /// </summary>

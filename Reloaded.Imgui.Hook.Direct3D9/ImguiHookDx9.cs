@@ -1,24 +1,18 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
-using Reloaded.Imgui.Hook.DirectX.Definitions;
-using Reloaded.Imgui.Hook.DirectX.Hooks;
-using Reloaded.Imgui.Hook.Misc;
+using Reloaded.Imgui.Hook.Direct3D9;
 using SharpDX.Direct3D9;
+using static Reloaded.Imgui.Hook.Misc.Native;
 using Debug = Reloaded.Imgui.Hook.Misc.Debug;
-using Format = SharpDX.DXGI.Format;
-using IDirect3DDevice9 = DearImguiSharp.IDirect3DDevice9;
-using PresentFlags = SharpDX.DXGI.PresentFlags;
 
 namespace Reloaded.Imgui.Hook.Implementations
 {
-    public unsafe class ImguiHookDX9 : IImguiHook
+    public unsafe class ImguiHookDx9 : IImguiHook
     {
-        public static ImguiHookDX9 Instance { get; private set; } = new ImguiHookDX9();
+        public static ImguiHookDx9 Instance { get; private set; }
 
         private IHook<DX9Hook.Release> _releaseHook;
         private IHook<DX9Hook.EndScene> _endSceneHook;
@@ -38,21 +32,26 @@ namespace Reloaded.Imgui.Hook.Implementations
         private bool _endSceneRecursionLock = false;
         private bool _resetRecursionLock = false;
 
-        public ImguiHookDX9()
-        {
-            var releasePtr      = (long)DX9Hook.DeviceVTable[(int)DirectX.Definitions.IDirect3DDevice9.Release].FunctionPointer;
-            var endScenePtr     = (long) DX9Hook.DeviceVTable[(int) DirectX.Definitions.IDirect3DDevice9.EndScene].FunctionPointer;
-            var resetPtr        = (long) DX9Hook.DeviceVTable[(int)DirectX.Definitions.IDirect3DDevice9.Reset].FunctionPointer;
+        public ImguiHookDx9() { }
 
-            _releaseHook = SDK.Hooks.CreateHook<DX9Hook.Release>(typeof(ImguiHookDX9), nameof(ReleaseStatic), releasePtr).Activate();
-            _endSceneHook = SDK.Hooks.CreateHook<DX9Hook.EndScene>(typeof(ImguiHookDX9), nameof(EndSceneImplStatic), endScenePtr).Activate();
-            _resetHook = SDK.Hooks.CreateHook<DX9Hook.Reset>(typeof(ImguiHookDX9), nameof(ResetImplStatic), resetPtr).Activate();
+        public void Initialize()
+        {
+            var releasePtr = (long)DX9Hook.DeviceVTable[(int)Direct3D9.Definitions.IDirect3DDevice9.Release].FunctionPointer;
+            var endScenePtr = (long)DX9Hook.DeviceVTable[(int)Direct3D9.Definitions.IDirect3DDevice9.EndScene].FunctionPointer;
+            var resetPtr = (long)DX9Hook.DeviceVTable[(int)Direct3D9.Definitions.IDirect3DDevice9.Reset].FunctionPointer;
+
+            _releaseHook = SDK.Hooks.CreateHook<DX9Hook.Release>(typeof(ImguiHookDx9), nameof(ReleaseStatic), releasePtr).Activate();
+            _endSceneHook = SDK.Hooks.CreateHook<DX9Hook.EndScene>(typeof(ImguiHookDx9), nameof(EndSceneImplStatic), endScenePtr).Activate();
+            _resetHook = SDK.Hooks.CreateHook<DX9Hook.Reset>(typeof(ImguiHookDx9), nameof(ResetImplStatic), resetPtr).Activate();
+            Instance = this;
         }
 
-        ~ImguiHookDX9()
+        ~ImguiHookDx9()
         {
             ReleaseUnmanagedResources();
         }
+
+        public bool IsApiSupported() => GetModuleHandle("d3d9.dll") != IntPtr.Zero;
 
         public void Dispose()
         {
@@ -67,7 +66,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             _windowHandle = IntPtr.Zero;
             _device = IntPtr.Zero;
             _initialized = false;
-
             ImguiHook.Shutdown();
         }
 
@@ -183,7 +181,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                 _resetRecursionLock = false;
             }
         }
-
+        
         public void Disable()
         {
             _endSceneHook.Disable();

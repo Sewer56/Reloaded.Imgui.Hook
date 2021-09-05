@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DearImguiSharp;
 using Reloaded.Imgui.Hook.DirectX;
-using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
 using Reloaded.Imgui.Hook.Misc;
 using Debug = Reloaded.Imgui.Hook.Misc.Debug;
@@ -68,8 +66,8 @@ namespace Reloaded.Imgui.Hook
             if (_created)
                 return;
 
-            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            Create(render, IntPtr.Zero, dxVersion, options);
+            var implementations = await Utility.GetSupportedImplementations(options.Implementations).ConfigureAwait(false);
+            Create(render, IntPtr.Zero, implementations, options);
         }
 
         /// <summary>
@@ -84,8 +82,8 @@ namespace Reloaded.Imgui.Hook
             if (_created)
                 return;
 
-            var dxVersion = await Utility.GetDXVersion().ConfigureAwait(false);
-            Create(render, windowHandle, dxVersion, options);
+            var implementations = await Utility.GetSupportedImplementations(options.Implementations).ConfigureAwait(false);
+            Create(render, windowHandle, implementations, options);
         }
 
         /// <summary>
@@ -93,10 +91,16 @@ namespace Reloaded.Imgui.Hook
         /// </summary>
         /// <param name="render">Renders your imgui UI</param>
         /// <param name="windowHandle">Handle to the window to render on. Pass IntPtr.Zero to select main window.</param>
-        /// <param name="version">DirectX version to handle.</param>
-        /// <param name="options">The options with which to initialise the hook.</param>
-        public static void Create(Action render, IntPtr windowHandle, Direct3DVersion version, ImguiHookOptions options = null)
+        /// <param name="implementations">List of implementations to use (regardless of whether they are supported or not).</param>
+        /// <param name="options">The options with which to initialise the hook. Implementations defined here are ignored in this overload.</param>
+        public static void Create(Action render, IntPtr windowHandle, List<IImguiHook> implementations, ImguiHookOptions options = null)
         {
+            if (implementations.Count <= 0)
+            {
+                Disable();
+                throw new Exception("Unsupported or not found any compatible Implementation(s).");
+            }
+
             _created = true;
             Render = render;
             WindowHandle = windowHandle;
@@ -108,17 +112,9 @@ namespace Reloaded.Imgui.Hook
                 IO.ConfigFlags |= (int)ImGuiConfigFlags.ImGuiConfigFlagsViewportsEnable;
 
             ImGui.StyleColorsDark(null);
-            Implementations = new List<IImguiHook>();
-            if (Utility.IsD3D11(version))
-                Implementations.Add(ImguiHookDX11.Instance);
-            if (Utility.IsD3D9(version))
-                Implementations.Add(ImguiHookDX9.Instance);
-
-            if (Implementations.Count <= 0)
-            {
-                Disable();
-                throw new Exception("Unsupported or not found any compatible DirectX Implementation(s).");
-            }
+            Implementations = implementations;
+            foreach (var impl in Implementations)
+                impl.Initialize();
         }
 
         /// <summary>
@@ -179,9 +175,9 @@ namespace Reloaded.Imgui.Hook
         }
 
         /// <summary>
-        /// Shuts down the Dear ImGui implementations.
+        /// [Internal] Shuts down the Dear ImGui implementations.
         /// </summary>
-        internal static void Shutdown()
+        public static void Shutdown()
         {
             if (Initialized)
             {
@@ -220,11 +216,11 @@ namespace Reloaded.Imgui.Hook
         }
 
         /// <summary>
-        /// Checks if the provided window handle matches the window handle associated with this context.
+        /// [Internal] Checks if the provided window handle matches the window handle associated with this context.
         /// If not initialised, accepts only IntPtr.Zero
         /// </summary>
         /// <param name="windowHandle">The window handle.</param>
-        internal static bool CheckWindowHandle(IntPtr windowHandle)
+        public static bool CheckWindowHandle(IntPtr windowHandle)
         {
             // Check for exact handle.
             if (windowHandle != IntPtr.Zero)
@@ -233,11 +229,10 @@ namespace Reloaded.Imgui.Hook
             return false;
         }
 
-
         /// <summary>
-        /// Called from renderer implementation, renders a new frame.
+        /// [Internal] Called from renderer implementation, renders a new frame.
         /// </summary>
-        internal static unsafe void InitializeWithHandle(IntPtr windowHandle)
+        public static unsafe void InitializeWithHandle(IntPtr windowHandle)
         {
             if (!Initialized)
             {
@@ -254,9 +249,9 @@ namespace Reloaded.Imgui.Hook
         }
 
         /// <summary>
-        /// Called from renderer implementation, renders a new frame.
+        /// [Internal] Called from renderer implementation, renders a new frame.
         /// </summary>
-        internal static unsafe void NewFrame()
+        public static unsafe void NewFrame()
         {
             ImGui.ImGuiImplWin32NewFrame();
             ImGui.NewFrame();

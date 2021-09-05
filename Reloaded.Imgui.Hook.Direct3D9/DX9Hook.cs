@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Structs;
 using Reloaded.Hooks.Definitions.X64;
-using Reloaded.Imgui.Hook.DirectX.Definitions;
+using Reloaded.Imgui.Hook.Direct3D9.Definitions;
 using Reloaded.Imgui.Hook.Misc;
 using SharpDX.Direct3D9;
 using CallingConventions = Reloaded.Hooks.Definitions.X86.CallingConventions;
 
-namespace Reloaded.Imgui.Hook.DirectX.Hooks
+namespace Reloaded.Imgui.Hook.Direct3D9
 {
     /// <summary>
     /// Provides access to DirectX 9 functions.
@@ -78,7 +77,7 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public struct Reset { public FuncPtr<IntPtr, BlittablePtr<PresentParameters>, IntPtr> Value; }
-        
+
         [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Reloaded.Hooks.Definitions.X86.Function(CallingConventions.Stdcall)]
         public struct CreateDevice { public FuncPtr<IntPtr, uint, DeviceType, IntPtr, CreateFlags, BlittablePtr<PresentParameters>, BlittablePtrPtr<int>, IntPtr> Value; }

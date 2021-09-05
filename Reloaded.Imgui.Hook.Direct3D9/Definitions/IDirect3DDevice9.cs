@@ -1,4 +1,4 @@
-﻿namespace Reloaded.Imgui.Hook.DirectX.Definitions
+﻿namespace Reloaded.Imgui.Hook.Direct3D9.Definitions
 {
     /// <summary>
     /// Contains a full list of IDirect3DDevice9 functions to be used alongside

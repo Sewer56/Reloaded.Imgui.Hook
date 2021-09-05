@@ -26,6 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D11\Reloaded.Imgui.Hook.Direct3D11.csproj" />
+    <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D9\Reloaded.Imgui.Hook.Direct3D9.csproj" />
     <ProjectReference Include="..\Reloaded.Imgui.Hook\Reloaded.Imgui.Hook.csproj" />
   </ItemGroup>
 

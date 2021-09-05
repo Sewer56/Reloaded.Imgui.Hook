@@ -1,28 +1,36 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Definitions;
 using Reloaded.Imgui.Hook.DirectX.Hooks;
+using Reloaded.Imgui.Hook.Implementations;
 using Reloaded.Imgui.Hook.Misc;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using SharpDX.Mathematics.Interop;
+using static Reloaded.Imgui.Hook.Misc.Native;
 using Device = SharpDX.Direct3D11.Device;
-using ID3D11Device = DearImguiSharp.ID3D11Device;
 
-namespace Reloaded.Imgui.Hook.Implementations
+namespace Reloaded.Imgui.Hook.Direct3D11
 {
-    public unsafe class ImguiHookDX11 : IImguiHook
+    public unsafe class ImguiHookDx11 : IImguiHook
     {
-        public static ImguiHookDX11 Instance { get; private set; } = new ImguiHookDX11();
-        
+        public static ImguiHookDx11 Instance { get; private set; }
+
         private IHook<DX11Hook.Present> _presentHook;
         private IHook<DX11Hook.ResizeBuffers> _resizeBuffersHook;
         private bool _initialized = false;
         private RenderTargetView _renderTargetView;
+
+        private static readonly string[] _supportedDlls = new string[]
+        {
+            "d3d11.dll",
+            "d3d11_1.dll",
+            "d3d11_2.dll",
+            "d3d11_3.dll",
+            "d3d11_4.dll"
+        };
 
         /*
          * In some cases (E.g. under DX9 + Viewports enabled), Dear ImGui might call
@@ -33,16 +41,29 @@ namespace Reloaded.Imgui.Hook.Implementations
         private bool _presentRecursionLock = false;
         private bool _resizeRecursionLock = false;
 
-        public ImguiHookDX11()
-        {
-            var presentPtr = (long) DX11Hook.DXGIVTable[(int) IDXGISwapChain.Present].FunctionPointer;
-            var resizeBuffersPtr = (long) DX11Hook.DXGIVTable[(int) IDXGISwapChain.ResizeBuffers].FunctionPointer;
+        public ImguiHookDx11() { }
 
-            _presentHook = SDK.Hooks.CreateHook<DX11Hook.Present>(typeof(ImguiHookDX11), nameof(PresentImplStatic), presentPtr).Activate();
-            _resizeBuffersHook = SDK.Hooks.CreateHook<DX11Hook.ResizeBuffers>(typeof(ImguiHookDX11), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
+        public bool IsApiSupported()
+        {
+            foreach (var dll in _supportedDlls)
+            {
+                if (GetModuleHandle(dll) != IntPtr.Zero)
+                    return true;
+            }
+
+            return false;
         }
 
-        ~ImguiHookDX11()
+        public void Initialize()
+        {
+            var presentPtr = (long)DX11Hook.DXGIVTable[(int)IDXGISwapChain.Present].FunctionPointer;
+            var resizeBuffersPtr = (long)DX11Hook.DXGIVTable[(int)IDXGISwapChain.ResizeBuffers].FunctionPointer;
+
+            _presentHook = SDK.Hooks.CreateHook<DX11Hook.Present>(typeof(ImguiHookDx11), nameof(PresentImplStatic), presentPtr).Activate();
+            _resizeBuffersHook = SDK.Hooks.CreateHook<DX11Hook.ResizeBuffers>(typeof(ImguiHookDx11), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
+            Instance = this;
+        }
+        ~ImguiHookDx11()
         {
             ReleaseUnmanagedResources();
         }
@@ -121,7 +142,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                 Debug.WriteLine($"[DX11 Present] Discarding via Recursion Lock");
                 return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
             }
-            
+
             _presentRecursionLock = true;
             try
             {
@@ -161,7 +182,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                 _presentRecursionLock = false;
             }
         }
-
+        
         public void Disable()
         {
             _presentHook?.Disable();
@@ -177,7 +198,7 @@ namespace Reloaded.Imgui.Hook.Implementations
         #region Hook Functions
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private static IntPtr ResizeBuffersImplStatic(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags) => Instance.ResizeBuffersImpl(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
-        
+
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
         private static IntPtr PresentImplStatic(IntPtr swapChainPtr, int syncInterval, PresentFlags flags) => Instance.PresentImpl(swapChainPtr, syncInterval, flags);
         #endregion
