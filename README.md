@@ -23,6 +23,10 @@ It is based off of [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp), 
 
 ## Basic Usage
 
+Install `Reloaded.Imgui.Hook` from NuGet and/or the required implementations of your choice 
+- Direct3D9: `Reloaded.Imgui.Hook.Direct3D9`
+- Direct3D11: `Reloaded.Imgui.Hook.Direct3D11`
+
 ### Injecting the Overlay
 
 First call `SDK.Init` to initialize all static variables used by the library, then simply call `ImguiHook.Create` with an appropriate delegate. 
@@ -30,7 +34,14 @@ First call `SDK.Init` to initialize all static variables used by the library, th
 ```csharp
 // During initialization.
 SDK.Init(_hooks);
-_imguiHook = await ImguiHook.Create(RenderTestWindow).ConfigureAwait(false);
+_imguiHook = await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
+{
+	Implementations = new List<IImguiHook>()
+    {
+        new ImguiHookDx9(), // `Reloaded.Imgui.Hook.Direct3D9`
+        new ImguiHookDx11() // `Reloaded.Imgui.Hook.Direct3D11`
+    }
+}).ConfigureAwait(false);
 
 private void RenderTestWindow()
 {
