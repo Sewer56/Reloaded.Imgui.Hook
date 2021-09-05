@@ -32,7 +32,7 @@ namespace Reloaded.Imgui.Hook.DirectX.Hooks
             // IDirect3DDevice9 targeting that form. The returned device should be the same one as used by the program.
             using var direct3D = new Direct3D();
             using var renderForm = new Form();
-            using var device = new Device(direct3D, 0, DeviceType.NullReference, IntPtr.Zero, CreateFlags.HardwareVertexProcessing, new PresentParameters() { BackBufferWidth = 1, BackBufferHeight = 1, DeviceWindowHandle = renderForm.Handle });
+            using var device = new Device(direct3D, 0, DeviceType.Hardware, IntPtr.Zero, CreateFlags.HardwareVertexProcessing, new PresentParameters() { BackBufferWidth = 640, BackBufferHeight = 480, DeviceWindowHandle = renderForm.Handle });
             Direct3D9VTable = SDK.Hooks.VirtualFunctionTableFromObject(direct3D.NativePointer, Enum.GetNames(typeof(IDirect3D9)).Length);
             DeviceVTable = SDK.Hooks.VirtualFunctionTableFromObject(device.NativePointer, Enum.GetNames(typeof(IDirect3DDevice9)).Length);
         }
