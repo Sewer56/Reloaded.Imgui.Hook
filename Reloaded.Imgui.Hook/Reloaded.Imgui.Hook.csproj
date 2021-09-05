@@ -9,7 +9,7 @@
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <Copyright>LGPL-3.0-only</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>2.0.3</Version>
+    <Version>2.0.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
