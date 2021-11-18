@@ -40,10 +40,10 @@ namespace Reloaded.Imgui.Hook.Implementations
             var endScenePtr = (long)DX9Hook.DeviceVTable[(int)Direct3D9.Definitions.IDirect3DDevice9.EndScene].FunctionPointer;
             var resetPtr = (long)DX9Hook.DeviceVTable[(int)Direct3D9.Definitions.IDirect3DDevice9.Reset].FunctionPointer;
 
+            Instance = this;
             _releaseHook = SDK.Hooks.CreateHook<DX9Hook.Release>(typeof(ImguiHookDx9), nameof(ReleaseStatic), releasePtr).Activate();
             _endSceneHook = SDK.Hooks.CreateHook<DX9Hook.EndScene>(typeof(ImguiHookDx9), nameof(EndSceneImplStatic), endScenePtr).Activate();
             _resetHook = SDK.Hooks.CreateHook<DX9Hook.Reset>(typeof(ImguiHookDx9), nameof(ResetImplStatic), resetPtr).Activate();
-            Instance = this;
         }
 
         ~ImguiHookDx9()
