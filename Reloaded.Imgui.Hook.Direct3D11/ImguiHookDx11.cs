@@ -58,10 +58,10 @@ namespace Reloaded.Imgui.Hook.Direct3D11
         {
             var presentPtr = (long)DX11Hook.DXGIVTable[(int)IDXGISwapChain.Present].FunctionPointer;
             var resizeBuffersPtr = (long)DX11Hook.DXGIVTable[(int)IDXGISwapChain.ResizeBuffers].FunctionPointer;
-
+            Instance = this;
             _presentHook = SDK.Hooks.CreateHook<DX11Hook.Present>(typeof(ImguiHookDx11), nameof(PresentImplStatic), presentPtr).Activate();
             _resizeBuffersHook = SDK.Hooks.CreateHook<DX11Hook.ResizeBuffers>(typeof(ImguiHookDx11), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
-            Instance = this;
+            
         }
         ~ImguiHookDx11()
         {
