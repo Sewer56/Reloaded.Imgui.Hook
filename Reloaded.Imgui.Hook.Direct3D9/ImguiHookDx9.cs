@@ -186,12 +186,14 @@ namespace Reloaded.Imgui.Hook.Implementations
         {
             _endSceneHook.Disable();
             _resetHook.Disable();
+            _releaseHook.Disable();
         }
 
         public void Enable()
         {
             _endSceneHook.Enable();
             _resetHook.Enable();
+            _releaseHook.Enable();
         }
 
         #region Hook Functions
