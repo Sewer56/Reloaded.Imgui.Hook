@@ -80,9 +80,8 @@ Leveraging  the capabilities of [Reloaded.Hooks](https://github.com/Reloaded-Pro
 - D3D9Ex 
 - D3D11
 
-Implemented backends should support window resizing and device resets (fullscreen/windowed switching) etc.
-
-Will implement D3D10 if there's any demand.
+Implemented backends should support window resizing and device resets (fullscreen/windowed switching) etc.  
+PRs for supporting other backends (especially OpenGL3 & Vulkan) would be very welcome. My [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp) does support them, so half of the work's already done.  
 
 ### In The Future
 - Extensibility. Provide workarounds for possible edge cases such as SRGB colour space.
@@ -90,7 +89,7 @@ Will implement D3D10 if there's any demand.
 ## Testing
 If you would like to try the library, try the test mod for [Reloaded-II](https://github.com/Reloaded-Project/Reloaded-II) available in this repository.
 
-Simply compile `Reloaded.ImGui.TestMod` and add to your Reloaded-II mods directory.
+Simply compile `Reloaded.ImGui.TestMod`, it will show up in your Reloaded-II's mod list.
 
 ## Known Issues
 - [14 August 2021]: When viewports are Enabled and being used (window outside app/game window), destroying the hook instance (and this imgui context) may crash the application. I believe this a dear imgui issue.
