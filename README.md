@@ -3,12 +3,14 @@
 	<img src="https://i.imgur.com/BjPn7rU.png" width="150" align="center" />
 	<br/> <br/>
 	<strong><i>Making life a bit easier.</i></strong><br/>
-	<strong><i>Current ImGui Version: 1.83 Docking</i></strong>
-	<br/> <br/>
+	<strong><i>Current ImGui Version: 1.88 Docking</i></strong><br/><br/>
+	<img alt="Nuget" src="https://img.shields.io/nuget/v/Reloaded.Imgui.Hook">
+	<br/>
 </div>
 
-
 # Introduction
+
+
 Reloaded.Imgui.Hook is a simple personal use utility library that can be used to inject [Dear ImGui](https://github.com/ocornut/imgui) into the current process. 
 
 It is based off of [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp), my personal use bindings library for Dear ImGui built ontop of [cimgui](https://github.com/cimgui/cimgui).
