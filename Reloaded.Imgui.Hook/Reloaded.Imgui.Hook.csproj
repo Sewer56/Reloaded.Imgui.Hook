@@ -10,6 +10,9 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Version>4.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/Sewer56/Reloaded.Imgui.Hook</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Sewer56/Reloaded.Imgui.Hook</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
