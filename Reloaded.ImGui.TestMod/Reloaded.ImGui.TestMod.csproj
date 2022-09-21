@@ -5,6 +5,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <OutputType>WinExe</OutputType>
+    <OutputPath>$(RELOADEDIIMODS)/Reloaded.ImGui.TestMod</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

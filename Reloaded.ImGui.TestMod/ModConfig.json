@@ -12,5 +12,6 @@
   "ModNativeDll64": "",
   "ModDependencies": [ "reloaded.sharedlib.hooks" ],
   "OptionalDependencies": null,
+  "IsUniversalMod": true,
   "SupportedAppId": [ ]
 }

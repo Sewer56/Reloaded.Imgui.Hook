@@ -109,7 +109,7 @@ namespace Reloaded.Imgui.Hook
             Options = options ?? new ImguiHookOptions();
 
             if (Options.EnableViewports)
-                IO.ConfigFlags |= (int)ImGuiConfigFlags.ImGuiConfigFlagsViewportsEnable;
+                IO.ConfigFlags |= (int)ImGuiConfigFlags.ViewportsEnable;
 
             ImGui.StyleColorsDark(null);
             Implementations = implementations;
@@ -259,7 +259,7 @@ namespace Reloaded.Imgui.Hook
             ImGui.EndFrame();
             ImGui.Render();
 
-            if ((IO.ConfigFlags & (int)ImGuiConfigFlags.ImGuiConfigFlagsViewportsEnable) > 0)
+            if ((IO.ConfigFlags & (int)ImGuiConfigFlags.ViewportsEnable) > 0)
             {
                 ImGui.UpdatePlatformWindows();
                 ImGui.RenderPlatformWindowsDefault(IntPtr.Zero, IntPtr.Zero);
