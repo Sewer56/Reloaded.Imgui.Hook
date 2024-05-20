@@ -61,7 +61,7 @@ namespace Reloaded.Imgui.Hook.Direct3D11
             Instance = this;
             _presentHook = SDK.Hooks.CreateHook<DX11Hook.Present>(typeof(ImguiHookDx11), nameof(PresentImplStatic), presentPtr).Activate();
             _resizeBuffersHook = SDK.Hooks.CreateHook<DX11Hook.ResizeBuffers>(typeof(ImguiHookDx11), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
-            
+
         }
         ~ImguiHookDx11()
         {
@@ -121,18 +121,24 @@ namespace Reloaded.Imgui.Hook.Direct3D11
         {
             _renderTargetView?.Dispose();
             _renderTargetView = null;
-            ImGui.ImGuiImplDX11InvalidateDeviceObjects();
+            // ImGui doesn't null check this for us :(
+            if (_initialized)
+            {
+                ImGui.ImGuiImplDX11InvalidateDeviceObjects();
+            }
         }
 
         private void PostResizeBuffers(IntPtr swapChainPtr)
         {
-            ImGui.ImGuiImplDX11CreateDeviceObjects();
-
-            _renderTargetView?.Dispose();
-            var swapChain = new SwapChain(swapChainPtr);
-            using var device = swapChain.GetDevice<Device>();
-            using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
-            _renderTargetView = new RenderTargetView(device, backBuffer);
+            if (_initialized)
+            {
+                ImGui.ImGuiImplDX11CreateDeviceObjects();
+                _renderTargetView?.Dispose();
+                var swapChain = new SwapChain(swapChainPtr);
+                using var device = swapChain.GetDevice<Device>();
+                using var backBuffer = swapChain.GetBackBuffer<Texture2D>(0);
+                _renderTargetView = new RenderTargetView(device, backBuffer);
+            }
         }
 
         private unsafe IntPtr PresentImpl(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
@@ -156,7 +162,7 @@ namespace Reloaded.Imgui.Hook.Direct3D11
                     return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
                 }
 
-                // Initialise 
+                // Initialise
                 using var device = swapChain.GetDevice<Device>();
                 if (!_initialized)
                 {
@@ -182,7 +188,7 @@ namespace Reloaded.Imgui.Hook.Direct3D11
                 _presentRecursionLock = false;
             }
         }
-        
+
         public void Disable()
         {
             _presentHook?.Disable();
