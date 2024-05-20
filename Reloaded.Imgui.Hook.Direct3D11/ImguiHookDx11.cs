@@ -122,7 +122,7 @@ namespace Reloaded.Imgui.Hook.Direct3D11
             _renderTargetView?.Dispose();
             _renderTargetView = null;
             // ImGui doesn't null check this for us :(
-            if (ImGui.GetIO().BackendRendererUserData != IntPtr.Zero)
+            if (_initialized)
             {
                 ImGui.ImGuiImplDX11InvalidateDeviceObjects();
             }
@@ -130,7 +130,8 @@ namespace Reloaded.Imgui.Hook.Direct3D11
 
         private void PostResizeBuffers(IntPtr swapChainPtr)
         {
-            if (ImGui.GetIO().BackendRendererUserData != IntPtr.Zero) {
+            if (_initialized)
+            {
                 ImGui.ImGuiImplDX11CreateDeviceObjects();
                 _renderTargetView?.Dispose();
                 var swapChain = new SwapChain(swapChainPtr);
