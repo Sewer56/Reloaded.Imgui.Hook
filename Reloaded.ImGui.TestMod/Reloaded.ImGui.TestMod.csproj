@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <OutputType>WinExe</OutputType>
@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D11\Reloaded.Imgui.Hook.Direct3D11.csproj" />
+    <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D12\Reloaded.Imgui.Hook.Direct3D12.csproj" />
     <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D9\Reloaded.Imgui.Hook.Direct3D9.csproj" />
     <ProjectReference Include="..\Reloaded.Imgui.Hook\Reloaded.Imgui.Hook.csproj" />
   </ItemGroup>

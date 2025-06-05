@@ -6,6 +6,8 @@ using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Imgui.Hook.Implementations;
 using System.Collections.Generic;
 using Reloaded.Imgui.Hook.Direct3D11;
+using Reloaded.Imgui.Hook.Direct3D12;
+using System.Diagnostics;
 
 namespace Reloaded.ImGui.TestMod
 {
@@ -38,6 +40,10 @@ namespace Reloaded.ImGui.TestMod
         /// </summary>
         public async void Start(IModLoaderV1 loader)
         {
+#if DEBUG
+            Debugger.Launch();
+#endif
+
             _modLoader = (IModLoader) loader;
             _logger = (ILogger) _modLoader.GetLogger();
             _modLoader.GetController<IReloadedHooks>().TryGetTarget(out _hooks);
@@ -51,7 +57,8 @@ namespace Reloaded.ImGui.TestMod
                 Implementations = new List<IImguiHook>()
                 {
                     new ImguiHookDx9(),
-                    new ImguiHookDx11()
+                    new ImguiHookDx11(),
+                    new ImguiHookDx12(),
                 }
             }).ConfigureAwait(false);
         }
