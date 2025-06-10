@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	<Version>1.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpDX.Direct3D12" Version="4.2.0" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+	<ProjectReference Include="..\Reloaded.Imgui.Hook\Reloaded.Imgui.Hook.csproj" />
+  </ItemGroup>
+</Project>
