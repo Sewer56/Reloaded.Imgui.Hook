@@ -30,6 +30,8 @@ public static class DX12Hook
     /// </summary>
     public static IVirtualFunctionTable ComamndQueueVTable { get; private set; }
 
+    public static int? CommandQueueOffset = null;
+
     static DX12Hook()
     {
         // Uncomment this if you need debug logs with DebugView.
@@ -55,7 +57,23 @@ public static class DX12Hook
         {
             SwapchainVTable = SDK.Hooks.VirtualFunctionTableFromObject(swapChain.NativePointer, Enum.GetNames(typeof(IDXGISwapChainVTable)).Length);
             ComamndQueueVTable = SDK.Hooks.VirtualFunctionTableFromObject(commandQueue.NativePointer, Enum.GetNames(typeof(ID3D12CommandQueueVTable)).Length);
+
+            unsafe
+            {
+                nint* ptr = (nint*)swapChain.NativePointer;
+                for (int i = 0; i < 1000; i++)
+                {
+                    if (ptr[i] == commandQueue.NativePointer)
+                    {
+                        CommandQueueOffset = i * 8;
+                        break;
+                    }
+                }
+            }
         }
+
+        if (CommandQueueOffset is null)
+            throw new Exception("Could not determine command queue offset from DX12 Swapchain pointer.");
 
         // Cleanup
         device.Dispose();

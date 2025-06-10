@@ -25,13 +25,13 @@ public unsafe class ImguiHookDx12 : IImguiHook
 
     private IHook<DX12Hook.Present> _presentHook;
     private IHook<DX12Hook.ResizeBuffers> _resizeBuffersHook;
-    private IHook<DX12Hook.ExecuteCommandLists> _execCmdListHook;
+    //private IHook<DX12Hook.ExecuteCommandLists> _execCmdListHook;
     private bool _initialized = false;
     private DescriptorHeap shaderResourceViewDescHeap;
     private DescriptorHeap renderTargetViewDescHeap;
-    private List<FrameContext> g_FrameContext = new List<FrameContext>();
-    private GraphicsCommandList g_pD3DCommandList;
-    private CommandQueue g_pD3DCommandQueue;
+    private List<FrameContext> _frameContexts = [];
+    private GraphicsCommandList _commandList;
+    private CommandQueue _commandQueue;
 
     private static readonly string[] _supportedDlls = new string[]
     {
@@ -68,11 +68,11 @@ public unsafe class ImguiHookDx12 : IImguiHook
     {
         var presentPtr = (long)DX12Hook.SwapchainVTable[(int)IDXGISwapChainVTable.Present].FunctionPointer;
         var resizeBuffersPtr = (long)DX12Hook.SwapchainVTable[(int)IDXGISwapChainVTable.ResizeBuffers].FunctionPointer;
-        var executeCommandListsPtr = (long)DX12Hook.ComamndQueueVTable[(int)ID3D12CommandQueueVTable.ExecuteCommandLists].FunctionPointer;
+        //var executeCommandListsPtr = (long)DX12Hook.ComamndQueueVTable[(int)ID3D12CommandQueueVTable.ExecuteCommandLists].FunctionPointer;
         Instance = this;
         _presentHook = SDK.Hooks.CreateHook<DX12Hook.Present>(typeof(ImguiHookDx12), nameof(PresentImplStatic), presentPtr).Activate();
         _resizeBuffersHook = SDK.Hooks.CreateHook<DX12Hook.ResizeBuffers>(typeof(ImguiHookDx12), nameof(ResizeBuffersImplStatic), resizeBuffersPtr).Activate();
-        _execCmdListHook = SDK.Hooks.CreateHook<DX12Hook.ExecuteCommandLists>(typeof(ImguiHookDx12), nameof(ExecCmdListsImplStatic), executeCommandListsPtr).Activate();
+        //_execCmdListHook = SDK.Hooks.CreateHook<DX12Hook.ExecuteCommandLists>(typeof(ImguiHookDx12), nameof(ExecCmdListsImplStatic), executeCommandListsPtr).Activate();
     }
 
     ~ImguiHookDx12()
@@ -130,7 +130,7 @@ public unsafe class ImguiHookDx12 : IImguiHook
     private void PreResizeBuffers()
     {
         // ResizeBuffer requires swapchain resources to be freed.
-        foreach (var frameCtx in g_FrameContext)
+        foreach (var frameCtx in _frameContexts)
             frameCtx.MainRenderTargetResource?.Dispose();
         ImGui.ImGuiImplDX12InvalidateDeviceObjects();
     }
@@ -146,12 +146,12 @@ public unsafe class ImguiHookDx12 : IImguiHook
         var rtvDescriptorSize = device.GetDescriptorHandleIncrementSize(DescriptorHeapType.RenderTargetView);
         var rtvHandle = renderTargetViewDescHeap.CPUDescriptorHandleForHeapStart;
 
-        for (var i = 0; i < g_FrameContext.Count; i++)
+        for (var i = 0; i < _frameContexts.Count; i++)
         {
-            g_FrameContext[i].main_render_target_descriptor = rtvHandle;
+            _frameContexts[i].main_render_target_descriptor = rtvHandle;
             var resource = swapChain.GetBackBuffer<SharpDX.Direct3D12.Resource>(i);
             device.CreateRenderTargetView(resource, null, rtvHandle);
-            g_FrameContext[i].MainRenderTargetResource = resource;
+            _frameContexts[i].MainRenderTargetResource = resource;
             rtvHandle.Ptr += rtvDescriptorSize;
         }
 
@@ -159,6 +159,8 @@ public unsafe class ImguiHookDx12 : IImguiHook
         return device;
     }
 
+    // Not currently used. Refer to queue comment in PresentImpl.
+    /*
     private void ExecCmdListOverride(IntPtr pQueue, uint NumCommandLists, IntPtr ppCommandLists)
     {
         var queue = new CommandQueue(pQueue);
@@ -170,6 +172,7 @@ public unsafe class ImguiHookDx12 : IImguiHook
         }
         _execCmdListHook.OriginalFunction.Value.Invoke(pQueue, NumCommandLists, ppCommandLists);
     }
+    */
 
     private unsafe nint PresentImpl(nint swapChainPtr, int syncInterval, PresentFlags flags)
     {
@@ -178,10 +181,6 @@ public unsafe class ImguiHookDx12 : IImguiHook
             Debug.WriteLine($"[DX12 Present] Discarding via Recursion Lock");
             return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
         }
-
-        // If we haven't picked the game's command queue yet, nothing to do.
-        if (g_pD3DCommandQueue == null)
-            return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
 
         _presentRecursionLock = true;
         try
@@ -234,43 +233,43 @@ public unsafe class ImguiHookDx12 : IImguiHook
 
                 for (var i = 0; i < frameBufferCount; i++)
                 {
-                    g_FrameContext.Add(new FrameContext
+                    _frameContexts.Add(new FrameContext
                     {
                         main_render_target_descriptor = rtvHandle,
                         MainRenderTargetResource = swapChain.GetBackBuffer<SharpDX.Direct3D12.Resource>(i),
                     });
-                    device.CreateRenderTargetView(g_FrameContext[i].MainRenderTargetResource, null, rtvHandle);
+                    device.CreateRenderTargetView(_frameContexts[i].MainRenderTargetResource, null, rtvHandle);
                     rtvHandle.Ptr += rtvDescriptorSize;
                 }
                 
                 // Create command list
                 for (var i = 0; i < frameBufferCount; i++)
                 {
-                    g_FrameContext[i].CommandAllocator = device.CreateCommandAllocator(CommandListType.Direct);
-                    if (g_FrameContext[i].CommandAllocator == null)
+                    _frameContexts[i].CommandAllocator = device.CreateCommandAllocator(CommandListType.Direct);
+                    if (_frameContexts[i].CommandAllocator == null)
                         return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
                 }
 
-                g_pD3DCommandList = device.CreateCommandList(0, CommandListType.Direct, g_FrameContext[0].CommandAllocator, null);
-                if (g_pD3DCommandList == null)
+                _commandList = device.CreateCommandList(0, CommandListType.Direct, _frameContexts[0].CommandAllocator, null);
+                if (_commandList == null)
                     return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
-                g_pD3DCommandList.Close();
+                _commandList.Close();
 
                 ImguiHook.InitializeWithHandle(windowHandle);
                 ImGui.ImGuiImplDX12Init((void*)device.NativePointer, frameBufferCount, DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8UNORM,
                     new ID3D12DescriptorHeap((void*)shaderResourceViewDescHeap.NativePointer),
                     shaderResourceViewDescHeap.CPUDescriptorHandleForHeapStart.Ptr,
                     shaderResourceViewDescHeap.GPUDescriptorHandleForHeapStart.Ptr);
-                
 
                 _initialized = true;
             }
+
 
             ImGui.ImGuiImplDX12NewFrame();
             ImguiHook.NewFrame();
 
             var FrameBufferCountsfgn = swapChain.Description.BufferCount;
-            var currentFrameContext = g_FrameContext[swapChain.CurrentBackBufferIndex];
+            var currentFrameContext = _frameContexts[swapChain.CurrentBackBufferIndex];
             currentFrameContext.CommandAllocator.Reset();
 
             var barrier = new ResourceBarrier
@@ -279,24 +278,31 @@ public unsafe class ImguiHookDx12 : IImguiHook
                 Flags = ResourceBarrierFlags.None,
                 Transition = new ResourceTransitionBarrier(currentFrameContext.MainRenderTargetResource, -1, ResourceStates.Present, ResourceStates.RenderTarget)
             };
-            g_pD3DCommandList.Reset(currentFrameContext.CommandAllocator, null);
-            g_pD3DCommandList.ResourceBarrier(barrier);
-            g_pD3DCommandList.SetRenderTargets(currentFrameContext.main_render_target_descriptor, null);
-            g_pD3DCommandList.SetDescriptorHeaps(shaderResourceViewDescHeap);
+            _commandList.Reset(currentFrameContext.CommandAllocator, null);
+            _commandList.ResourceBarrier(barrier);
+            _commandList.SetRenderTargets(currentFrameContext.main_render_target_descriptor, null);
+            _commandList.SetDescriptorHeaps(shaderResourceViewDescHeap);
 
-            ImGui.Render();
-            ImGui.ImGuiImplDX12RenderDrawData(ImGui.GetDrawData(), new ID3D12GraphicsCommandList((void*)g_pD3DCommandList.NativePointer));
-            barrier.Transition = new ResourceTransitionBarrier
-            {
-                Subresource = barrier.Transition.Subresource,
-                StateBefore = ResourceStates.RenderTarget,
-                StateAfter = ResourceStates.Present
-            };
+            ImGui.ImGuiImplDX12RenderDrawData(ImGui.GetDrawData(), new ID3D12GraphicsCommandList((void*)_commandList.NativePointer));
             barrier.Transition = new ResourceTransitionBarrier(currentFrameContext.MainRenderTargetResource, -1, ResourceStates.RenderTarget, ResourceStates.Present);
-            g_pD3DCommandList.ResourceBarrier(barrier);
-            g_pD3DCommandList.Close();
-            g_pD3DCommandQueue.ExecuteCommandList(g_pD3DCommandList);
+            _commandList.ResourceBarrier(barrier);
+            _commandList.Close();
+
+            // Normally we would hook ExecuteCommandList to grab the command queue, but it causes the following issue in certain games (S.T.A.L.K.E.R Enhanced Edition):
+            // "D3D12 ERROR: ID3D12CommandQueue::ExecuteCommandLists:
+            // A command list, which writes to a swap chain back buffer, may only be executed on the command queue associated with that buffer.
+            // [ STATE_SETTING ERROR #907: EXECUTECOMMANDLISTS_WRONGSWAPCHAINBUFFERREFERENCE]"
             
+            // Grabbing the queue pointer from the swapchain (offset is scanned in DX12Hook.cs) seems to be OK.
+            // https://stackoverflow.com/questions/36286425/how-do-i-get-the-directx-12-command-queue-from-a-swap-chain
+
+            var queuePtr = *(nint*)(swapChain.NativePointer + DX12Hook.CommandQueueOffset!.Value);
+            if (queuePtr != 0)
+            {
+                var cmdQueue = new CommandQueue(queuePtr);
+                cmdQueue.ExecuteCommandList(_commandList);
+            }
+
             return _presentHook.OriginalFunction.Value.Invoke(swapChainPtr, syncInterval, flags);
         }
         finally
@@ -309,19 +315,19 @@ public unsafe class ImguiHookDx12 : IImguiHook
     {
         _presentHook?.Disable();
         _resizeBuffersHook?.Disable();
-        _execCmdListHook?.Disable();
+        //_execCmdListHook?.Disable();
     }
 
     public void Enable()
     {
         _presentHook?.Enable();
         _resizeBuffersHook?.Enable();
-        _execCmdListHook?.Enable();
+        //_execCmdListHook?.Enable();
     }
 
     #region Hook Functions
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-    private static void ExecCmdListsImplStatic(IntPtr pQueue, uint NumCommandLists, IntPtr ppCommandLists) => Instance.ExecCmdListOverride(pQueue, NumCommandLists, ppCommandLists);
+    //[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    //private static void ExecCmdListsImplStatic(IntPtr pQueue, uint NumCommandLists, IntPtr ppCommandLists) => Instance.ExecCmdListOverride(pQueue, NumCommandLists, ppCommandLists);
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static IntPtr ResizeBuffersImplStatic(IntPtr swapchainPtr, uint bufferCount, uint width, uint height, Format newFormat, uint swapchainFlags) => Instance.ResizeBuffersImpl(swapchainPtr, bufferCount, width, height, newFormat, swapchainFlags);
