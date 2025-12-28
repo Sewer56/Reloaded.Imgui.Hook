@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Reloaded.Imgui.Hook
 {
@@ -17,6 +18,13 @@ namespace Reloaded.Imgui.Hook
         /// Sometimes necessary to stop the application from pausing when <see cref="EnableViewports"/> is turned on.
         /// </summary>
         public bool IgnoreWindowUnactivate = false;
+        
+        /// <summary>
+        /// [Initialization Only!]
+        /// Custom WndProc handler pointer to use instead of the default one.
+        /// This is useful for applications that need special care when handling messages.
+        /// </summary>
+        public IntPtr? CustomWndProcHandlerPointer = null;
 
         /// <summary>
         /// The individual list of implementations.

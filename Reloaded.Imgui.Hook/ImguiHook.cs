@@ -242,7 +242,9 @@ namespace Reloaded.Imgui.Hook
 
                 Debug.WriteLine($"[ImguiHook] Init with Window Handle {(long)WindowHandle:X}");
                 ImGui.ImGuiImplWin32Init(WindowHandle);
-                var wndProcHandlerPtr = (IntPtr)SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook), nameof(WndProcHandler));
+                var wndProcHandlerPtr = Options.CustomWndProcHandlerPointer ??
+                                        (IntPtr) SDK.Hooks.Utilities.GetFunctionPointer(typeof(ImguiHook),
+                                            nameof(WndProcHandler));
                 WndProcHook = WndProcHook.Create(WindowHandle, Unsafe.As<IntPtr, WndProcHook.WndProc>(ref wndProcHandlerPtr));
                 Initialized = true;
             }
