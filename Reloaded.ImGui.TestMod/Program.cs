@@ -51,7 +51,8 @@ namespace Reloaded.ImGui.TestMod
                 Implementations = new List<IImguiHook>()
                 {
                     new ImguiHookDx9(),
-                    new ImguiHookDx11()
+                    new ImguiHookDx11(),
+                    new ImguiHookOpenGL(),
                 }
             }).ConfigureAwait(false);
         }

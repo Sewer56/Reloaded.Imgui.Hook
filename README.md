@@ -28,6 +28,7 @@ It is based off of [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp), 
 Install `Reloaded.Imgui.Hook` from NuGet and/or the required implementations of your choice 
 - Direct3D9: `Reloaded.Imgui.Hook.Direct3D9`
 - Direct3D11: `Reloaded.Imgui.Hook.Direct3D11`
+- OpenGL: `Reloaded.Imgui.Hook.OpenGL`
 
 ### Injecting the Overlay
 
@@ -40,8 +41,9 @@ _imguiHook = await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
 {
 	Implementations = new List<IImguiHook>()
     {
-        new ImguiHookDx9(), // `Reloaded.Imgui.Hook.Direct3D9`
-        new ImguiHookDx11() // `Reloaded.Imgui.Hook.Direct3D11`
+        new ImguiHookDx9(),   // `Reloaded.Imgui.Hook.Direct3D9`
+        new ImguiHookDx11(),  // `Reloaded.Imgui.Hook.Direct3D11`
+        new ImguiHookOpenGL() // `Reloaded.Imgui.Hook.OpenGL`
     }
 }).ConfigureAwait(false);
 
@@ -79,9 +81,10 @@ Leveraging  the capabilities of [Reloaded.Hooks](https://github.com/Reloaded-Pro
 - D3D9
 - D3D9Ex 
 - D3D11
+- OpenGL
 
 Implemented backends should support window resizing and device resets (fullscreen/windowed switching) etc.  
-PRs for supporting other backends (especially OpenGL3 & Vulkan) would be very welcome. My [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp) does support them, so half of the work's already done.  
+PRs for supporting other backends (especially Vulkan) would be very welcome. My [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp) does support them, so half of the work's already done.  
 
 ### In The Future
 - Extensibility. Provide workarounds for possible edge cases such as SRGB colour space.
