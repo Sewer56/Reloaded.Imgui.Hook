@@ -8,6 +8,12 @@ namespace Reloaded.Imgui.Hook.Misc
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr WindowFromDC(IntPtr hdc);
+
         public static IntPtr GetWindowLong(IntPtr hWnd, GWL nIndex)
         {
             if (IsWindowUnicode(hWnd))
