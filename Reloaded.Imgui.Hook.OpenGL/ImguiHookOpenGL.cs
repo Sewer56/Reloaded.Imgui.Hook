@@ -38,6 +38,8 @@ namespace Reloaded.Imgui.Hook.Implementations
         {
             Instance = this;
 
+            // Avoid deadlocks by disabling IME functionality
+            // see: https://github.com/ocornut/imgui/issues/5535
             ImGui.GetIO().SetPlatformImeDataFn = (viewport, data) =>
             {
 
