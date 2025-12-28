@@ -17,7 +17,6 @@ namespace Reloaded.Imgui.Hook.Implementations
         private IHook<OpenGL3Hook.SwapBuffers> _swapBuffersHook;
         private bool _initialized = false;
         private IntPtr _windowHandle;
-        private IntPtr _deviceContext;
 
         /*
          * In some cases (E.g. with Viewports enabled), Dear ImGui might call
@@ -66,9 +65,7 @@ namespace Reloaded.Imgui.Hook.Implementations
 
         public bool IsApiSupported()
         {
-            var opengl32 = GetModuleHandle("opengl32.dll");
-            var gdi32 = GetModuleHandle("gdi32.dll");
-            return opengl32 != IntPtr.Zero || gdi32 != IntPtr.Zero;
+            return GetModuleHandle("opengl32.dll") != IntPtr.Zero;
         }
 
         public void Dispose()
@@ -86,7 +83,6 @@ namespace Reloaded.Imgui.Hook.Implementations
                 _initialized = false;
             }
             _windowHandle = IntPtr.Zero;
-            _deviceContext = IntPtr.Zero;
             ImguiHook.Shutdown();
         }
 
@@ -101,7 +97,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             // With multi-viewports, ImGui might call SwapBuffers again; so we need to prevent stack overflow here.
             if (_wglSwapBuffersRecursionLock)
             {
-                Debug.WriteLine($"[OpenGL wglSwapBuffers] Discarding via Recursion Lock");
                 return _wglSwapBuffersHook.OriginalFunction.Value.Invoke(hdc);
             }
 
@@ -122,7 +117,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             // With multi-viewports, ImGui might call SwapBuffers again; so we need to prevent stack overflow here.
             if (_swapBuffersRecursionLock)
             {
-                Debug.WriteLine($"[OpenGL SwapBuffers] Discarding via Recursion Lock");
                 return _swapBuffersHook.OriginalFunction.Value.Invoke(hdc);
             }
 
@@ -159,7 +153,6 @@ namespace Reloaded.Imgui.Hook.Implementations
             {
                 if (!_initialized)
                 {
-                    _deviceContext = hdc;
                     _windowHandle = windowHandle;
                     if (_windowHandle == IntPtr.Zero)
                         return;
