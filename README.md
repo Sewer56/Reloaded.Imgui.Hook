@@ -28,7 +28,7 @@ It is based off of [DearImguiSharp](https://github.com/Sewer56/DearImguiSharp), 
 Install `Reloaded.Imgui.Hook` from NuGet and/or the required implementations of your choice 
 - Direct3D9: `Reloaded.Imgui.Hook.Direct3D9`
 - Direct3D11: `Reloaded.Imgui.Hook.Direct3D11`
-- OpenGL: `Reloaded.Imgui.Hook.OpenGL`
+- OpenGL3: `Reloaded.Imgui.Hook.OpenGL3`
 
 ### Injecting the Overlay
 
@@ -43,7 +43,7 @@ _imguiHook = await ImguiHook.Create(RenderTestWindow, new ImguiHookOptions()
     {
         new ImguiHookDx9(),   // `Reloaded.Imgui.Hook.Direct3D9`
         new ImguiHookDx11(),  // `Reloaded.Imgui.Hook.Direct3D11`
-        new ImguiHookOpenGL() // `Reloaded.Imgui.Hook.OpenGL`
+        new ImguiHookOpenGL3() // `Reloaded.Imgui.Hook.OpenGL3`
     }
 }).ConfigureAwait(false);
 

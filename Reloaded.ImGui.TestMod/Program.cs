@@ -52,7 +52,7 @@ namespace Reloaded.ImGui.TestMod
                 {
                     new ImguiHookDx9(),
                     new ImguiHookDx11(),
-                    new ImguiHookOpenGL(),
+                    new ImguiHookOpenGL3(),
                 }
             }).ConfigureAwait(false);
         }

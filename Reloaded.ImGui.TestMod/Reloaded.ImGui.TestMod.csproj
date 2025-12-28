@@ -29,7 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D11\Reloaded.Imgui.Hook.Direct3D11.csproj" />
     <ProjectReference Include="..\Reloaded.Imgui.Hook.Direct3D9\Reloaded.Imgui.Hook.Direct3D9.csproj" />
-    <ProjectReference Include="..\Reloaded.Imgui.Hook.OpenGL\Reloaded.Imgui.Hook.OpenGL.csproj" />
+    <ProjectReference Include="..\Reloaded.Imgui.Hook.OpenGL3\Reloaded.Imgui.Hook.OpenGL3.csproj" />
     <ProjectReference Include="..\Reloaded.Imgui.Hook\Reloaded.Imgui.Hook.csproj" />
   </ItemGroup>
 

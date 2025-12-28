@@ -6,12 +6,12 @@ using Reloaded.Hooks.Definitions.X64;
 using static Reloaded.Imgui.Hook.Misc.Native;
 using CallingConventions = Reloaded.Hooks.Definitions.X86.CallingConventions;
 
-namespace Reloaded.Imgui.Hook.OpenGL
+namespace Reloaded.Imgui.Hook.OpenGL3
 {
     /// <summary>
     /// Provides access to OpenGL functions for hooking.
     /// </summary>
-    public static class OpenGLHook
+    public static class OpenGL3Hook
     {
         /// <summary>
         /// Function pointer to wglSwapBuffers from opengl32.dll
@@ -23,7 +23,7 @@ namespace Reloaded.Imgui.Hook.OpenGL
         /// </summary>
         public static IntPtr SwapBuffersPtr { get; private set; }
 
-        static OpenGLHook()
+        static OpenGL3Hook()
         {
             // Get function pointers for both swap buffer functions
             var opengl32Handle = GetModuleHandle("opengl32.dll");

@@ -4,18 +4,18 @@ using System.Runtime.InteropServices;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Imgui.Hook.Implementations;
-using Reloaded.Imgui.Hook.OpenGL;
+using Reloaded.Imgui.Hook.OpenGL3;
 using static Reloaded.Imgui.Hook.Misc.Native;
 using Debug = Reloaded.Imgui.Hook.Misc.Debug;
 
 namespace Reloaded.Imgui.Hook.Implementations
 {
-    public unsafe class ImguiHookOpenGL : IImguiHook
+    public unsafe class ImguiHookOpenGL3 : IImguiHook
     {
-        public static ImguiHookOpenGL Instance { get; private set; }
+        public static ImguiHookOpenGL3 Instance { get; private set; }
 
-        private IHook<OpenGLHook.WglSwapBuffers> _wglSwapBuffersHook;
-        private IHook<OpenGLHook.SwapBuffers> _swapBuffersHook;
+        private IHook<OpenGL3Hook.WglSwapBuffers> _wglSwapBuffersHook;
+        private IHook<OpenGL3Hook.SwapBuffers> _swapBuffersHook;
         private bool _initialized = false;
         private bool _wglUsed = false;
         private bool _gdiUsed = false;
@@ -32,7 +32,7 @@ namespace Reloaded.Imgui.Hook.Implementations
         private bool _swapBuffersRecursionLock = false;
         private bool _isRendering = false;
 
-        public ImguiHookOpenGL() { }
+        public ImguiHookOpenGL3() { }
 
         public void Initialize()
         {
@@ -46,23 +46,23 @@ namespace Reloaded.Imgui.Hook.Implementations
             };
 
             // Hook wglSwapBuffers if available
-            if (OpenGLHook.WglSwapBuffersPtr != IntPtr.Zero)
+            if (OpenGL3Hook.WglSwapBuffersPtr != IntPtr.Zero)
             {
-                var wglSwapBuffersPtr = (long)OpenGLHook.WglSwapBuffersPtr;
-                _wglSwapBuffersHook = SDK.Hooks.CreateHook<OpenGLHook.WglSwapBuffers>(typeof(ImguiHookOpenGL), nameof(WglSwapBuffersImplStatic), wglSwapBuffersPtr).Activate();
+                var wglSwapBuffersPtr = (long)OpenGL3Hook.WglSwapBuffersPtr;
+                _wglSwapBuffersHook = SDK.Hooks.CreateHook<OpenGL3Hook.WglSwapBuffers>(typeof(ImguiHookOpenGL3), nameof(WglSwapBuffersImplStatic), wglSwapBuffersPtr).Activate();
                 Debug.WriteLine($"[OpenGL Initialize] Hooked wglSwapBuffers at 0x{wglSwapBuffersPtr:X}");
             }
 
             // Hook SwapBuffers if available
-            if (OpenGLHook.SwapBuffersPtr != IntPtr.Zero)
+            if (OpenGL3Hook.SwapBuffersPtr != IntPtr.Zero)
             {
-                var swapBuffersPtr = (long)OpenGLHook.SwapBuffersPtr;
-                _swapBuffersHook = SDK.Hooks.CreateHook<OpenGLHook.SwapBuffers>(typeof(ImguiHookOpenGL), nameof(SwapBuffersImplStatic), swapBuffersPtr).Activate();
+                var swapBuffersPtr = (long)OpenGL3Hook.SwapBuffersPtr;
+                _swapBuffersHook = SDK.Hooks.CreateHook<OpenGL3Hook.SwapBuffers>(typeof(ImguiHookOpenGL3), nameof(SwapBuffersImplStatic), swapBuffersPtr).Activate();
                 Debug.WriteLine($"[OpenGL Initialize] Hooked SwapBuffers at 0x{swapBuffersPtr:X}");
             }
         }
 
-        ~ImguiHookOpenGL()
+        ~ImguiHookOpenGL3()
         {
             ReleaseUnmanagedResources();
         }
