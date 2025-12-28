@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DearImguiSharp;
 using Reloaded.Hooks.Definitions;
-using Reloaded.Imgui.Hook.Implementations;
 using Reloaded.Imgui.Hook.OpenGL3;
 using static Reloaded.Imgui.Hook.Misc.Native;
 using Debug = Reloaded.Imgui.Hook.Misc.Debug;
@@ -17,8 +16,6 @@ namespace Reloaded.Imgui.Hook.Implementations
         private IHook<OpenGL3Hook.WglSwapBuffers> _wglSwapBuffersHook;
         private IHook<OpenGL3Hook.SwapBuffers> _swapBuffersHook;
         private bool _initialized = false;
-        private bool _wglUsed = false;
-        private bool _gdiUsed = false;
         private IntPtr _windowHandle;
         private IntPtr _deviceContext;
 
@@ -111,7 +108,8 @@ namespace Reloaded.Imgui.Hook.Implementations
             _wglSwapBuffersRecursionLock = true;
             try
             {
-                return SwapBuffersCommon(hdc, () => _wglSwapBuffersHook.OriginalFunction.Value.Invoke(hdc), "wglSwapBuffers");
+                SwapBuffersCommon(hdc, "wglSwapBuffers");
+                return _wglSwapBuffersHook.OriginalFunction.Value.Invoke(hdc);
             }
             finally
             {
@@ -131,7 +129,8 @@ namespace Reloaded.Imgui.Hook.Implementations
             _swapBuffersRecursionLock = true;
             try
             {
-                return SwapBuffersCommon(hdc, () => _swapBuffersHook.OriginalFunction.Value.Invoke(hdc), "SwapBuffers");
+                SwapBuffersCommon(hdc, "SwapBuffers");
+                return _swapBuffersHook.OriginalFunction.Value.Invoke(hdc);
             }
             finally
             {
@@ -139,7 +138,7 @@ namespace Reloaded.Imgui.Hook.Implementations
             }
         }
 
-        private int SwapBuffersCommon(IntPtr hdc, Func<int> originalFunction, string hookName)
+        private void SwapBuffersCommon(IntPtr hdc, string hookName)
         {
             // Get window handle from device context
             var windowHandle = WindowFromDC(hdc);
@@ -148,12 +147,12 @@ namespace Reloaded.Imgui.Hook.Implementations
             if (!ImguiHook.CheckWindowHandle(windowHandle))
             {
                 Debug.WriteLine($"[OpenGL {hookName}] Discarding Window Handle {(long)windowHandle:X}");
-                return originalFunction();
+                return;
             }
 
             // Prevent double rendering if an app uses both methods or one calls the other.
             if (_isRendering)
-                return originalFunction();
+                return;
 
             _isRendering = true;
             try
@@ -163,7 +162,7 @@ namespace Reloaded.Imgui.Hook.Implementations
                     _deviceContext = hdc;
                     _windowHandle = windowHandle;
                     if (_windowHandle == IntPtr.Zero)
-                        return originalFunction();
+                        return;
 
                     Debug.WriteLine($"[OpenGL {hookName}] Init, Window Handle {(long)windowHandle:X}");
                     ImguiHook.InitializeWithHandle(windowHandle);
@@ -174,24 +173,10 @@ namespace Reloaded.Imgui.Hook.Implementations
                     _initialized = true;
                 }
 
-                // Log which method is being used (once per method)
-                if (hookName == "wglSwapBuffers" && !_wglUsed)
-                {
-                    _wglUsed = true;
-                    Debug.WriteLine($"[OpenGL] Application is using wglSwapBuffers");
-                }
-                else if (hookName == "SwapBuffers" && !_gdiUsed)
-                {
-                    _gdiUsed = true;
-                    Debug.WriteLine($"[OpenGL] Application is using GDI SwapBuffers");
-                }
-
                 ImGui.ImGuiImplOpenGL3NewFrame();
                 ImguiHook.NewFrame();
                 using var drawData = ImGui.GetDrawData();
                 ImGui.ImGuiImplOpenGL3RenderDrawData(drawData);
-
-                return originalFunction();
             }
             finally
             {
