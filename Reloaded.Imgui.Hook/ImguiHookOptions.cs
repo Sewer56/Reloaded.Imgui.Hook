@@ -21,8 +21,15 @@ namespace Reloaded.Imgui.Hook
         
         /// <summary>
         /// [Initialization Only!]
-        /// Custom WndProc handler pointer to use instead of the default one.
-        /// This is useful for applications that need special care when handling messages.
+        /// Specifies a custom WndProc handler for specialized message processing.
+        /// <br/>
+        /// <b>Requirements:</b>
+        /// <list type="bullet">
+        /// <item>Calling Convention: <c>stdcall</c> (C#: <c>[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]</c>)</item>
+        /// <item>Signature: <c>IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)</c></item>
+        /// </list>
+        /// <b>Note:</b> The implementation is responsible for invoking <see cref="DearImguiSharp.ImGui.ImplWin32_WndProcHandler"/>, 
+        /// the original WndProc (via <c>WndProcHook.Instance.Hook.OriginalFunction.Value.Invoke</c>), and returning the appropriate result.
         /// </summary>
         public IntPtr? CustomWndProcHandlerPointer = null;
 
